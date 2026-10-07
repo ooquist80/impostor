@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Impostor – Designförslag</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ---------- Design tokens (→ frontend/src/styles/tokens.css) ---------- */
+  :root {
+    --bg: #14122B;
+    --surface: #1F1C3F;
+    --surface-2: #2A2654;
+    --border: #3A3570;
+    --text: #F4F1FF;
+    --muted: #A9A3D1;
+    --accent: #FFB547;
+    --accent-ink: #2A1A00;
+    --impostor: #FF4D6D;
+    --success: #3DDC97;
+
+    --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+    --font-body: "Inter", system-ui, sans-serif;
+
+    --radius-card: 20px;
+    --radius-pill: 999px;
+    --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+    --space: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: #0C0B1C;
+    color: var(--text);
+    font-family: var(--font-body);
+    line-height: 1.45;
+    padding: 40px 16px 80px;
+  }
+
+  /* ---------- Preview page chrome ---------- */
+  .page { max-width: 1320px; margin: 0 auto; }
+  .page > header { margin-bottom: 40px; }
+  .page h1 { font-family: var(--font-display); font-size: 40px; font-weight: 800; letter-spacing: -.02em; }
+  .page h2 { font-family: var(--font-display); font-size: 22px; font-weight: 700; margin: 48px 0 16px; }
+  .lead { color: var(--muted); max-width: 640px; margin-top: 8px; }
+
+  .sheet { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .sheet .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 14px; font-weight: 600; }
+  .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .swatch { font-size: 11px; color: var(--muted); }
+  .swatch i { display: block; height: 44px; border-radius: 12px; margin-bottom: 6px; border: 1px solid rgba(255,255,255,.08); }
+  .stack { display: grid; gap: 10px; }
+
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 32px 24px; }
+  figure { display: grid; gap: 10px; justify-items: center; }
+  figcaption { color: var(--muted); font-size: 13px; font-weight: 500; }
+
+  /* ---------- Phone frame ---------- */
+  .phone {
+    width: 100%; max-width: 360px; height: 740px;
+    background: var(--bg);
+    border-radius: 40px;
+    border: 8px solid #26233F;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    position: relative;
+  }
+  .phone.danger { background: radial-gradient(120% 60% at 50% 30%, #3A1230 0%, var(--bg) 70%); }
+  .phone.win    { background: radial-gradient(120% 60% at 50% 25%, #12342E 0%, var(--bg) 70%); }
+
+  /* ---------- App components ---------- */
+  .topbar { display: flex; justify-content: space-between; align-items: center; padding: 22px 20px 8px; }
+  .logo { font-family: var(--font-display); font-weight: 800; font-size: 20px; letter-spacing: -.02em; }
+  .logo span { color: var(--accent); }
+  .round { font-size: 12px; font-weight: 600; color: var(--muted); background: var(--surface-2); padding: 6px 12px; border-radius: var(--radius-pill); }
+
+  .screen { flex: 1; padding: 12px 20px; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  .screen.center { justify-content: center; text-align: center; align-items: center; }
+  .footer { padding: 12px 20px 24px; display: grid; gap: 10px; }
+
+  .card { background: var(--surface); border-radius: var(--radius-card); padding: 18px; border: 1px solid rgba(255,255,255,.04); }
+  .card-title { font-family: var(--font-display); font-weight: 700; font-size: 17px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: baseline; }
+  .link { font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--accent); }
+
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; min-height: 52px; padding: 0 20px;
+    border-radius: var(--radius-pill); border: 0;
+    font: 600 16px var(--font-body); cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); box-shadow: 0 6px 18px rgba(255,181,71,.25); }
+  .btn-primary:disabled { background: var(--surface-2); color: var(--muted); box-shadow: none; }
+  .btn-secondary { background: transparent; color: var(--text); border: 1.5px solid var(--border); }
+  .btn-danger { background: var(--impostor); color: #2B0010; }
+  .hint { font-size: 12px; color: var(--muted); text-align: center; }
+
+  .input-row { display: flex; gap: 8px; align-items: center; }
+  .input {
+    flex: 1; min-height: 44px; padding: 0 14px; border-radius: 12px;
+    background: var(--surface-2); border: 1.5px solid transparent; color: var(--text);
+    font: 500 15px var(--font-body); display: flex; align-items: center;
+  }
+  .input.placeholder { color: #6E68A0; }
+  .input.focus { border-color: var(--accent); }
+  .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: 0; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; }
+  .add { margin-top: 4px; min-height: 44px; font-size: 14px; border-style: dashed; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { padding: 9px 14px; border-radius: var(--radius-pill); background: var(--surface-2); color: var(--muted); font-size: 14px; font-weight: 500; border: 1.5px solid transparent; }
+  .chip.on { background: rgba(255,181,71,.14); color: var(--accent); border-color: rgba(255,181,71,.55); }
+  .chip.on::before { content: "✓ "; }
+
+  .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 600; }
+  .display { font-family: var(--font-display); font-weight: 800; letter-spacing: -.02em; line-height: 1.05; }
+  .d-xl { font-size: 48px; }
+  .d-l { font-size: 34px; }
+  .d-m { font-size: 24px; }
+  .amber { color: var(--accent); }
+  .red { color: var(--impostor); }
+  .green { color: var(--success); }
+  .muted { color: var(--muted); }
+
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%; flex: none;
+    display: grid; place-items: center;
+    font: 700 16px var(--font-display); color: var(--bg);
+  }
+  .avatar.big { width: 88px; height: 88px; font-size: 36px; }
+
+  .reveal-card {
+    width: 100%; aspect-ratio: 1 / 1.05; border-radius: 28px;
+    display: grid; place-items: center; text-align: center; padding: 24px;
+    background: var(--surface); border: 2px dashed var(--border);
+  }
+  .reveal-card.word { border: 2px solid rgba(255,181,71,.5); background: linear-gradient(160deg, #2B2650, var(--surface)); }
+  .reveal-card.imp  { border: 2px solid var(--impostor); background: linear-gradient(160deg, #4A1533, #2A1236); box-shadow: 0 0 40px rgba(255,77,109,.25); }
+  .tap { font-size: 56px; }
+
+  .player {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: 16px; background: var(--surface);
+    border: 2px solid transparent; font-weight: 500;
+  }
+  .player.sel { border-color: var(--accent); background: rgba(255,181,71,.08); }
+  .player .radio { margin-left: auto; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); }
+  .player.sel .radio { border: 7px solid var(--accent); }
+
+  .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; }
+  .badge.green { background: rgba(61,220,151,.14); }
+  .badge.red { background: rgba(255,77,109,.14); }
+  .points { display: grid; gap: 8px; width: 100%; }
+  .points .player { padding: 8px 12px; }
+  .points .badge { margin-left: auto; }
+
+  .facts { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .facts .card { padding: 14px; text-align: left; }
+  .facts b { display: block; font: 700 20px var(--font-display); margin-top: 2px; }
+
+  .score { display: grid; grid-template-columns: 24px 40px 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; }
+  .score .rank { font: 700 16px var(--font-display); color: var(--muted); text-align: center; }
+  .score .name { font-weight: 600; }
+  .bar { height: 6px; border-radius: 6px; background: var(--surface-2); margin-top: 6px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--accent); border-radius: 6px; }
+  .score .pts { font: 800 22px var(--font-display); }
+  .score.lead { border: 2px solid rgba(255,181,71,.5); background: linear-gradient(160deg, #2E2852, var(--surface)); }
+
+  .a1 { background: #FFB547; } .a2 { background: #8C7BFF; } .a3 { background: #3DDC97; }
+  .a4 { background: #FF8FB1; } .a5 { background: #5CC8FF; }
+
+  @media (max-width: 420px) {
+    body { padding: 24px 16px 60px; }
+    .page h1 { font-size: 32px; }
+    .gallery { grid-template-columns: 1fr; }
+    .phone { border-width: 6px; border-radius: 32px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Impostor <span class="amber">·</span> Spelkväll</h1>
+    <p class="lead">Designförslag för frontend. Mörkt, varmt och gjort för att skickas runt bordet: stor text, stora knappar och en tydlig huvudåtgärd per skärm. Bärnsten är primärfärgen, rosaröd används bara för impostorn.</p>
+  </header>
+
+  <!-- ---------- Style sheet ---------- -->
+  <h2>Stilguide</h2>
+  <div class="sheet">
+    <div class="card">
+      <h3>Färger</h3>
+      <div class="swatches">
+        <div class="swatch"><i style="background:var(--bg)"></i>bg</div>
+        <div class="swatch"><i style="background:var(--surface)"></i>surface</div>
+        <div class="swatch"><i style="background:var(--surface-2)"></i>surface-2</div>
+        <div class="swatch"><i style="background:var(--text)"></i>text</div>
+        <div class="swatch"><i style="background:var(--muted)"></i>muted</div>
+        <div class="swatch"><i style="background:var(--accent)"></i>accent</div>
+        <div class="swatch"><i style="background:var(--impostor)"></i>impostor</div>
+        <div class="swatch"><i style="background:var(--success)"></i>success</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Typografi</h3>
+      <div class="stack">
+        <div class="display d-xl amber">Elefant</div>
+        <div class="display d-l">Anna börjar!</div>
+        <div class="display d-m">Spelare</div>
+        <div>Brödtext i Inter, 15–16px.</div>
+        <div class="eyebrow">Etikett · versaler</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Komponenter</h3>
+      <div class="stack">
+        <button class="btn btn-primary">Primär knapp</button>
+        <button class="btn btn-secondary">Sekundär knapp</button>
+        <button class="btn btn-primary" disabled>Inaktiverad</button>
+        <div class="chips"><span class="chip on">Djur</span><span class="chip">Mat</span><span class="badge green">+1 p</span><span class="badge red">+2 p</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- Screens ---------- -->
+  <h2>Skärmar</h2>
+  <div class="gallery">
+
+    <!-- 1. Setup -->
+    <figure>
+      <div class="phone">
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div></div>
+        <div class="screen">
+          <div class="card">
+            <div class="card-title">Spelare <span class="muted" style="font:500 13px var(--font-body)">4 st</span></div>
+            <div class="stack">
+              <div class="input-row"><div class="input">Anna</div><button class="icon-btn">×</button></div>
+              <div class="input-row"><div class="input">Erik</div><button class="icon-btn">×</button></div>
+              <div class="input-row"><div class="input focus">Sara</div><button class="icon-btn">×</button></div>
+              <div class="input-row"><div class="input placeholder">Spelare 4</div><button class="icon-btn">×</button></div>
+              <button class="btn btn-secondary add">+ Lägg till spelare</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Kategorier <span class="link">Avmarkera alla</span></div>
+            <div class="chips">
+              <span class="chip on">Djur</span><span class="chip on">Mat</span><span class="chip on">Platser</span>
+              <span class="chip">Yrken</span><span class="chip on">Sport</span><span class="chip">Saker</span>
+            </div>
+          </div>
+        </div>
+        <div class="footer">
+          <button class="btn btn-primary" disabled>Starta spelet</button>
+          <p class="hint">Fyll i namn för alla spelare</p>
+        </div>
+      </div>
+      <figcaption>1 · Setup</figcaption>
+    </figure>
+
+    <!-- 2. Reveal – pass -->
+    <figure>
+      <div class="phone">
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
+        <div class="screen center">
+          <div class="eyebrow">Spelare 2 av 4</div>
+          <div class="display d-l">Ge enheten till<br><span class="amber">Erik</span></div>
+          <div class="reveal-card">
+            <div>
+              <div class="tap">👆</div>
+              <p class="muted" style="margin-top:12px">Tryck för att se ditt ord.<br>Se till att ingen annan tittar!</p>
+            </div>
+          </div>
+        </div>
+        <div class="footer"><button class="btn btn-primary">Visa mitt ord</button></div>
+      </div>
+      <figcaption>2 · Reveal: skicka vidare</figcaption>
+    </figure>
+
+    <!-- 3. Reveal – word -->
+    <figure>
+      <div class="phone">
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
+        <div class="screen center">
+          <div class="eyebrow">Erik</div>
+          <div class="reveal-card word">
+            <div>
+              <div class="eyebrow">Ordet är</div>
+              <div class="display d-xl amber" style="margin:10px 0">Elefant</div>
+              <p class="muted">Kategori: Djur</p>
+            </div>
+          </div>
+          <p class="muted" style="font-size:14px">Kom ihåg ordet och avslöja det inte.</p>
+        </div>
+        <div class="footer"><button class="btn btn-secondary">Dölj och skicka vidare</button></div>
+      </div>
+      <figcaption>3 · Reveal: ordet</figcaption>
+    </figure>
+
+    <!-- 4. Reveal – impostor -->
+    <figure>
+      <div class="phone danger">
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
+        <div class="screen center">
+          <div class="eyebrow">Sara</div>
+          <div class="reveal-card imp">
+            <div>
+              <div style="font-size:44px">🕵️</div>
+              <div class="display d-l red" style="margin:8px 0 18px">Du är impostorn!</div>
+              <div class="eyebrow">Ledtråd</div>
+              <div class="display d-m" style="margin-top:6px">Snabel</div>
+            </div>
+          </div>
+          <p class="muted" style="font-size:14px">Smält in. Låt ingen märka något.</p>
+        </div>
+        <div class="footer"><button class="btn btn-secondary">Dölj och skicka vidare</button></div>
+      </div>
+      <figcaption>4 · Reveal: impostorn</figcaption>
+    </figure>
+
+    <!-- 5. Play -->
+    <figure>
+      <div class="phone">
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
+        <div class="screen center">
+          <div class="avatar big a1">A</div>
+          <div class="display d-l" style="margin-top:8px"><span class="amber">Anna</span> börjar!</div>
+          <div class="card" style="text-align:left; margin-top:12px">
+            <p class="muted" style="font-size:14px">Lägg ner enheten. Säg ett ord var, i tur och ordning, som hör ihop med ordet. Diskutera sedan vem som är impostorn.</p>
+          </div>
+        </div>
+        <div class="footer"><button class="btn btn-danger">Avslöja impostorn</button></div>
+      </div>
+      <figcaption>5 · Play</figcaption>
+    </figure>
+
+    <!-- 6. Vote -->
+    <figure>
+      <div class="phone">
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
+        <div class="screen">
+          <div>
+            <div class="display d-m">Vem är impostorn?</div>
+            <p class="muted" style="font-size:14px; margin-top:4px">Välj den ni tror och bekräfta.</p>
+          </div>
+          <div class="stack">
+            <div class="player"><div class="avatar a1">A</div>Anna<span class="radio"></span></div>
+            <div class="player"><div class="avatar a2">E</div>Erik<span class="radio"></span></div>
+            <div class="player sel"><div class="avatar a3">S</div>Sara<span class="radio"></span></div>
+            <div class="player"><div class="avatar a4">J</div>Johan<span class="radio"></span></div>
+          </div>
+        </div>
+        <div class="footer"><button class="btn btn-primary">Bekräfta</button></div>
+      </div>
+      <figcaption>6 · Vote</figcaption>
+    </figure>
+
+    <!-- 7. End – correct -->
+    <figure>
+      <div class="phone win">
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
+        <div class="screen center">
+          <div class="display d-xl green">Rätt!</div>
+          <p class="muted"><b style="color:var(--text)">Sara</b> var impostorn.</p>
+          <div class="facts">
+            <div class="card"><span class="eyebrow">Ordet</span><b class="amber">Elefant</b></div>
+            <div class="card"><span class="eyebrow">Ledtråd</span><b>Snabel</b></div>
+          </div>
+          <div class="points">
+            <div class="player"><div class="avatar a1">A</div>Anna<span class="badge green">+1 p</span></div>
+            <div class="player"><div class="avatar a2">E</div>Erik<span class="badge green">+1 p</span></div>
+            <div class="player"><div class="avatar a4">J</div>Johan<span class="badge green">+1 p</span></div>
+          </div>
+        </div>
+        <div class="footer">
+          <button class="btn btn-primary">Nästa runda</button>
+          <button class="btn btn-secondary">Avsluta</button>
+        </div>
+      </div>
+      <figcaption>7 · Rundresultat: rätt gissning</figcaption>
+    </figure>
+
+    <!-- 8. End – wrong -->
+    <figure>
+      <div class="phone danger">
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
+        <div class="screen center">
+          <div class="display d-xl red">Fel!</div>
+          <p class="muted">Ni valde Erik, men <b style="color:var(--text)">Sara</b> var impostorn.</p>
+          <div class="facts">
+            <div class="card"><span class="eyebrow">Ordet</span><b class="amber">Elefant</b></div>
+            <div class="card"><span class="eyebrow">Ledtråd</span><b>Snabel</b></div>
+          </div>
+          <div class="points">
+            <div class="player"><div class="avatar a3">S</div>Sara <span class="muted" style="font-size:13px">🕵️ impostor</span><span class="badge red">+2 p</span></div>
+          </div>
+        </div>
+        <div class="footer">
+          <button class="btn btn-primary">Nästa runda</button>
+          <button class="btn btn-secondary">Avsluta</button>
+        </div>
+      </div>
+      <figcaption>8 · Rundresultat: fel gissning</figcaption>
+    </figure>
+
+    <!-- 9. Scoreboard -->
+    <figure>
+      <div class="phone">
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">3 rundor</div></div>
+        <div class="screen">
+          <div style="text-align:center; margin:8px 0">
+            <div style="font-size:40px">👑</div>
+            <div class="display d-l"><span class="amber">Sara</span> vinner!</div>
+          </div>
+          <div class="stack">
+            <div class="card score lead"><span class="rank">1</span><div class="avatar a3">S</div><div><div class="name">Sara</div><div class="bar"><i style="width:100%"></i></div></div><span class="pts amber">4</span></div>
+            <div class="card score"><span class="rank">2</span><div class="avatar a1">A</div><div><div class="name">Anna</div><div class="bar"><i style="width:50%"></i></div></div><span class="pts">2</span></div>
+            <div class="card score"><span class="rank">3</span><div class="avatar a2">E</div><div><div class="name">Erik</div><div class="bar"><i style="width:25%"></i></div></div><span class="pts">1</span></div>
+            <div class="card score"><span class="rank">4</span><div class="avatar a4">J</div><div><div class="name">Johan</div><div class="bar"><i style="width:25%"></i></div></div><span class="pts">1</span></div>
+          </div>
+        </div>
+        <div class="footer"><button class="btn btn-primary">Nytt spel</button></div>
+      </div>
+      <figcaption>9 · Poängtavla</figcaption>
+    </figure>
+
+  </div>
+</div>
+</body>
+</html>
