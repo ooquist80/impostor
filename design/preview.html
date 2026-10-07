@@ -169,6 +169,72 @@
 
   .a1 { background: #FFB547; } .a2 { background: #8C7BFF; } .a3 { background: #3DDC97; }
   .a4 { background: #FF8FB1; } .a5 { background: #5CC8FF; }
+  .avatar.emoji { font-size: 20px; }
+  .avatar.big.emoji { font-size: 44px; }
+
+  /* ---------- Accounts & QR ---------- */
+  .profile-btn { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--surface-2); display: grid; place-items: center; font-size: 16px; }
+  .back { font-size: 14px; font-weight: 600; color: var(--muted); }
+
+  .reg-row { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 6px 0 4px; border-radius: 12px; background: var(--surface-2); border: 1.5px solid rgba(61,220,151,.35); }
+  .reg-row .avatar { width: 32px; height: 32px; font-size: 16px; }
+  .reg-row .name { font-weight: 600; font-size: 15px; }
+  .tag { font-size: 11px; font-weight: 600; color: var(--success); background: rgba(61,220,151,.12); padding: 3px 8px; border-radius: var(--radius-pill); }
+  .add-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+  .add-grid .btn { min-height: 44px; font-size: 14px; padding: 0 10px; }
+  .btn-scan { background: rgba(255,181,71,.12); color: var(--accent); border: 1.5px solid rgba(255,181,71,.5); }
+
+  .camera { position: absolute; inset: 0; background: radial-gradient(80% 50% at 30% 40%, #3B3440, #121018 70%), #121018; }
+  .camera::after { content: ""; position: absolute; inset: 0; background: rgba(8,7,20,.45); }
+  .scan-ui { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 22px 20px 24px; gap: 18px; }
+  .scan-head { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+  .close { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.12); display: grid; place-items: center; font-size: 18px; }
+  .viewfinder { position: relative; width: 240px; height: 240px; margin-top: 40px; border-radius: 24px; }
+  .viewfinder i { position: absolute; width: 44px; height: 44px; border: 4px solid var(--accent); }
+  .viewfinder i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 24px; }
+  .viewfinder i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 24px; }
+  .viewfinder i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 24px; }
+  .viewfinder i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 24px; }
+  .scanline { position: absolute; left: 16px; right: 16px; top: 46%; height: 2px; background: var(--accent); box-shadow: 0 0 16px 2px rgba(255,181,71,.7); border-radius: 2px; }
+  .toast { display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 10px; border-radius: var(--radius-pill); background: var(--surface); box-shadow: var(--shadow); font-size: 14px; font-weight: 600; }
+  .toast .avatar { width: 28px; height: 28px; font-size: 15px; }
+  .toast.ok { border: 1.5px solid rgba(61,220,151,.5); }
+  .toast.warn { border: 1.5px solid rgba(255,181,71,.5); color: var(--accent); border-radius: 16px; padding: 10px 14px; text-align: center; }
+  .scan-ui .footer { margin-top: auto; width: 100%; padding: 0; }
+
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; border-radius: var(--radius-pill); background: var(--surface-2); }
+  .tabs span { text-align: center; padding: 10px; border-radius: var(--radius-pill); font-size: 14px; font-weight: 600; color: var(--muted); }
+  .tabs span.on { background: var(--surface); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  .field { display: grid; gap: 6px; }
+  .field label { font-size: 13px; font-weight: 600; color: var(--muted); }
+  .field small { font-size: 12px; color: var(--muted); }
+
+  .emoji-row { display: flex; gap: 6px; justify-content: space-between; }
+  .emoji-row span { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; background: var(--surface-2); border: 2px solid transparent; }
+  .emoji-row span.on { border-color: var(--accent); }
+  .color-row { display: flex; gap: 10px; margin-top: 12px; }
+  .color-row i { width: 26px; height: 26px; border-radius: 50%; }
+  .color-row i.on { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--text); }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stats .card { padding: 12px 14px; }
+  .stats b { display: block; font: 800 26px var(--font-display); }
+  .stats span { font-size: 12px; color: var(--muted); font-weight: 500; }
+
+  .qr-card { background: #fff; padding: 18px; border-radius: 24px; box-shadow: 0 0 0 6px rgba(255,181,71,.25), var(--shadow); }
+  .qr { display: block; width: 220px; height: 220px; }
+  .timer { width: 200px; }
+  .timer .bar i { width: 60%; }
+  .saved { font-size: 13px; color: var(--success); text-align: center; }
+
+  /* ---------- Change categories between rounds ---------- */
+  .cat-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 16px; background: var(--surface); font-size: 13px; }
+  .cat-row .cats { color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cat-row .link { margin-left: auto; flex: none; }
+  .scrim { position: absolute; inset: 0; background: rgba(8,7,20,.65); z-index: 1; }
+  .bsheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; background: var(--surface); border-radius: 28px 28px 0 0; padding: 10px 20px 24px; display: grid; gap: 14px; box-shadow: 0 -10px 30px rgba(0,0,0,.4); }
+  .bsheet .grip { width: 40px; height: 5px; border-radius: 5px; background: var(--border); justify-self: center; }
+  .bsheet .chip { background: var(--surface-2); }
+  .bsheet .chip.on { background: rgba(255,181,71,.14); }
 
   @media (max-width: 420px) {
     body { padding: 24px 16px 60px; }
@@ -182,7 +248,7 @@
 <div class="page">
   <header>
     <h1>Impostor <span class="amber">·</span> Spelkväll</h1>
-    <p class="lead">Designförslag för frontend. Mörkt, varmt och gjort för att skickas runt bordet: stor text, stora knappar och en tydlig huvudåtgärd per skärm. Bärnsten är primärfärgen, rosaröd används bara för impostorn.</p>
+    <p class="lead">Designförslag för frontend. Mörkt, varmt och gjort för att skickas runt bordet: stor text, stora knappar och en tydlig huvudåtgärd per skärm. Bärnsten är primärfärgen, rosaröd används bara för bedragaren.</p>
   </header>
 
   <!-- ---------- Style sheet ---------- -->
@@ -229,16 +295,19 @@
     <!-- 1. Setup -->
     <figure>
       <div class="phone">
-        <div class="topbar"><div class="logo">Impostor<span>.</span></div></div>
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="profile-btn">👤</div></div>
         <div class="screen">
           <div class="card">
             <div class="card-title">Spelare <span class="muted" style="font:500 13px var(--font-body)">4 st</span></div>
             <div class="stack">
               <div class="input-row"><div class="input">Anna</div><button class="icon-btn">×</button></div>
-              <div class="input-row"><div class="input">Erik</div><button class="icon-btn">×</button></div>
-              <div class="input-row"><div class="input focus">Sara</div><button class="icon-btn">×</button></div>
+              <div class="input-row"><div class="input focus">Erik</div><button class="icon-btn">×</button></div>
+              <div class="input-row"><div class="reg-row" style="flex:1"><div class="avatar a3 emoji">🦊</div><span class="name">Sara</span><span class="tag" style="margin-left:auto">✓ Konto</span></div><button class="icon-btn">×</button></div>
               <div class="input-row"><div class="input placeholder">Spelare 4</div><button class="icon-btn">×</button></div>
-              <button class="btn btn-secondary add">+ Lägg till spelare</button>
+              <div class="add-grid">
+                <button class="btn btn-secondary add" style="margin:0">+ Lägg till</button>
+                <button class="btn btn-scan">▣ Skanna QR</button>
+              </div>
             </div>
           </div>
           <div class="card">
@@ -254,7 +323,7 @@
           <p class="hint">Fyll i namn för alla spelare</p>
         </div>
       </div>
-      <figcaption>1 · Setup</figcaption>
+      <figcaption>1 · Setup: gäst + registrerad spelare</figcaption>
     </figure>
 
     <!-- 2. Reveal – pass -->
@@ -305,7 +374,7 @@
           <div class="reveal-card imp">
             <div>
               <div style="font-size:44px">🕵️</div>
-              <div class="display d-l red" style="margin:8px 0 18px">Du är impostorn!</div>
+              <div class="display d-l red" style="margin:8px 0 18px">Du är bedragaren!</div>
               <div class="eyebrow">Ledtråd</div>
               <div class="display d-m" style="margin-top:6px">Snabel</div>
             </div>
@@ -314,7 +383,7 @@
         </div>
         <div class="footer"><button class="btn btn-secondary">Dölj och skicka vidare</button></div>
       </div>
-      <figcaption>4 · Reveal: impostorn</figcaption>
+      <figcaption>4 · Reveal: bedragaren</figcaption>
     </figure>
 
     <!-- 5. Play -->
@@ -325,10 +394,10 @@
           <div class="avatar big a1">A</div>
           <div class="display d-l" style="margin-top:8px"><span class="amber">Anna</span> börjar!</div>
           <div class="card" style="text-align:left; margin-top:12px">
-            <p class="muted" style="font-size:14px">Lägg ner enheten. Säg ett ord var, i tur och ordning, som hör ihop med ordet. Diskutera sedan vem som är impostorn.</p>
+            <p class="muted" style="font-size:14px">Lägg ner enheten. Säg ett ord var, i tur och ordning, som hör ihop med ordet. Diskutera sedan vem som är bedragaren.</p>
           </div>
         </div>
-        <div class="footer"><button class="btn btn-danger">Avslöja impostorn</button></div>
+        <div class="footer"><button class="btn btn-danger">Avslöja bedragaren</button></div>
       </div>
       <figcaption>5 · Play</figcaption>
     </figure>
@@ -339,13 +408,13 @@
         <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
         <div class="screen">
           <div>
-            <div class="display d-m">Vem är impostorn?</div>
+            <div class="display d-m">Vem är bedragaren?</div>
             <p class="muted" style="font-size:14px; margin-top:4px">Välj den ni tror och bekräfta.</p>
           </div>
           <div class="stack">
             <div class="player"><div class="avatar a1">A</div>Anna<span class="radio"></span></div>
             <div class="player"><div class="avatar a2">E</div>Erik<span class="radio"></span></div>
-            <div class="player sel"><div class="avatar a3">S</div>Sara<span class="radio"></span></div>
+            <div class="player sel"><div class="avatar a3 emoji">🦊</div>Sara<span class="radio"></span></div>
             <div class="player"><div class="avatar a4">J</div>Johan<span class="radio"></span></div>
           </div>
         </div>
@@ -360,7 +429,7 @@
         <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
         <div class="screen center">
           <div class="display d-xl green">Rätt!</div>
-          <p class="muted"><b style="color:var(--text)">Sara</b> var impostorn.</p>
+          <p class="muted"><b style="color:var(--text)">Sara</b> var bedragaren.</p>
           <div class="facts">
             <div class="card"><span class="eyebrow">Ordet</span><b class="amber">Elefant</b></div>
             <div class="card"><span class="eyebrow">Ledtråd</span><b>Snabel</b></div>
@@ -372,6 +441,7 @@
           </div>
         </div>
         <div class="footer">
+          <div class="cat-row"><span class="muted">Kategorier</span><span class="cats">Djur · Mat · Platser · Sport</span><span class="link">Ändra</span></div>
           <button class="btn btn-primary">Nästa runda</button>
           <button class="btn btn-secondary">Avsluta</button>
         </div>
@@ -385,21 +455,46 @@
         <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
         <div class="screen center">
           <div class="display d-xl red">Fel!</div>
-          <p class="muted">Ni valde Erik, men <b style="color:var(--text)">Sara</b> var impostorn.</p>
+          <p class="muted">Ni valde Erik, men <b style="color:var(--text)">Sara</b> var bedragaren.</p>
           <div class="facts">
             <div class="card"><span class="eyebrow">Ordet</span><b class="amber">Elefant</b></div>
             <div class="card"><span class="eyebrow">Ledtråd</span><b>Snabel</b></div>
           </div>
           <div class="points">
-            <div class="player"><div class="avatar a3">S</div>Sara <span class="muted" style="font-size:13px">🕵️ impostor</span><span class="badge red">+2 p</span></div>
+            <div class="player"><div class="avatar a3 emoji">🦊</div>Sara <span class="muted" style="font-size:13px">🕵️ impostor</span><span class="badge red">+2 p</span></div>
           </div>
         </div>
         <div class="footer">
+          <div class="cat-row"><span class="muted">Kategorier</span><span class="cats">Djur · Mat · Platser · Sport</span><span class="link">Ändra</span></div>
           <button class="btn btn-primary">Nästa runda</button>
           <button class="btn btn-secondary">Avsluta</button>
         </div>
       </div>
       <figcaption>8 · Rundresultat: fel gissning</figcaption>
+    </figure>
+
+    <!-- 8b. End – change categories sheet -->
+    <figure>
+      <div class="phone win">
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
+        <div class="screen center">
+          <div class="display d-xl green">Rätt!</div>
+          <p class="muted"><b style="color:var(--text)">Sara</b> var bedragaren.</p>
+        </div>
+        <div class="scrim"></div>
+        <div class="bsheet">
+          <div class="grip"></div>
+          <div class="card-title" style="margin:0">Kategorier för nästa runda <span class="link">Välj alla</span></div>
+          <p class="muted" style="font-size:13px; margin-top:-8px">Samma som förra rundan om du inte ändrar något.</p>
+          <div class="chips">
+            <span class="chip on">Djur</span><span class="chip">Mat</span><span class="chip on">Platser</span>
+            <span class="chip on">Yrken</span><span class="chip">Sport</span><span class="chip">Saker</span>
+          </div>
+          <button class="btn btn-primary">Spara</button>
+          <button class="btn btn-secondary">Avbryt</button>
+        </div>
+      </div>
+      <figcaption>8b · Rundresultat: ändra kategorier</figcaption>
     </figure>
 
     <!-- 9. Scoreboard -->
@@ -412,18 +507,129 @@
             <div class="display d-l"><span class="amber">Sara</span> vinner!</div>
           </div>
           <div class="stack">
-            <div class="card score lead"><span class="rank">1</span><div class="avatar a3">S</div><div><div class="name">Sara</div><div class="bar"><i style="width:100%"></i></div></div><span class="pts amber">4</span></div>
+            <div class="card score lead"><span class="rank">1</span><div class="avatar a3 emoji">🦊</div><div><div class="name">Sara</div><div class="bar"><i style="width:100%"></i></div></div><span class="pts amber">4</span></div>
             <div class="card score"><span class="rank">2</span><div class="avatar a1">A</div><div><div class="name">Anna</div><div class="bar"><i style="width:50%"></i></div></div><span class="pts">2</span></div>
             <div class="card score"><span class="rank">3</span><div class="avatar a2">E</div><div><div class="name">Erik</div><div class="bar"><i style="width:25%"></i></div></div><span class="pts">1</span></div>
             <div class="card score"><span class="rank">4</span><div class="avatar a4">J</div><div><div class="name">Johan</div><div class="bar"><i style="width:25%"></i></div></div><span class="pts">1</span></div>
           </div>
         </div>
-        <div class="footer"><button class="btn btn-primary">Nytt spel</button></div>
+        <div class="footer">
+          <p class="saved">✓ Statistik sparad för Sara</p>
+          <button class="btn btn-primary">Nytt spel</button>
+        </div>
       </div>
       <figcaption>9 · Poängtavla</figcaption>
     </figure>
 
   </div>
+
+  <!-- ---------- Accounts & QR ---------- -->
+  <h2>Konto och QR</h2>
+  <div class="gallery">
+
+    <!-- 10. QR scanner (game device) -->
+    <figure>
+      <div class="phone">
+        <div class="camera"></div>
+        <div class="scan-ui">
+          <div class="scan-head"><span class="display d-m">Skanna QR</span><span class="close">×</span></div>
+          <p class="muted" style="font-size:14px; text-align:center">Rikta kameran mot spelarens QR-kod.<br>Du kan skanna flera i rad.</p>
+          <div class="viewfinder"><i></i><i></i><i></i><i></i><div class="scanline"></div></div>
+          <div class="stack" style="justify-items:center; margin-top:8px">
+            <div class="toast ok"><div class="avatar a3 emoji">🦊</div>Sara tillagd</div>
+            <div class="toast warn">⏱ QR-koden har gått ut, be spelaren visa en ny</div>
+          </div>
+          <div class="footer"><button class="btn btn-primary">Klar (1 tillagd)</button></div>
+        </div>
+      </div>
+      <figcaption>10 · QR-skanner på spelenheten</figcaption>
+    </figure>
+
+    <!-- 11. Login / register -->
+    <figure>
+      <div class="phone">
+        <div class="topbar"><span class="back">← Till spelet</span><div class="logo">Impostor<span>.</span></div></div>
+        <div class="screen">
+          <div style="margin:18px 0 6px">
+            <div class="display d-l">Skapa konto</div>
+            <p class="muted" style="font-size:14px; margin-top:6px">Spara din statistik och gå med i spel genom att visa en QR-kod.</p>
+          </div>
+          <div class="tabs"><span>Logga in</span><span class="on">Skapa konto</span></div>
+          <div class="card stack" style="gap:14px">
+            <div class="field"><label>Spelarnamn</label><div class="input focus">Sara</div><small>2–30 tecken. Visas för andra spelare.</small></div>
+            <div class="field"><label>Lösenord</label><div class="input">••••••••</div><small>Minst 6 tecken.</small></div>
+          </div>
+        </div>
+        <div class="footer">
+          <button class="btn btn-primary">Skapa konto</button>
+          <p class="hint">Har du redan ett konto? <span class="link">Logga in</span></p>
+        </div>
+      </div>
+      <figcaption>11 · Logga in / skapa konto</figcaption>
+    </figure>
+
+    <!-- 12. Profile -->
+    <figure>
+      <div class="phone">
+        <div class="topbar"><span class="back">← Till spelet</span><span class="link">Logga ut</span></div>
+        <div class="screen">
+          <div style="display:flex; align-items:center; gap:14px">
+            <div class="avatar big a3 emoji" style="width:72px; height:72px; font-size:36px">🦊</div>
+            <div><div class="display d-l">Sara</div><p class="muted" style="font-size:13px">Medlem sedan okt 2026</p></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Avatar</div>
+            <div class="emoji-row"><span class="on">🦊</span><span>🐸</span><span>🐙</span><span>🦄</span><span>🐼</span><span>👽</span><span>🎃</span></div>
+            <div class="color-row"><i class="a1"></i><i class="a2"></i><i class="a3 on"></i><i class="a4"></i><i class="a5"></i></div>
+          </div>
+          <div class="stats">
+            <div class="card"><b>12</b><span>Spel</span></div>
+            <div class="card"><b class="amber">5</b><span>Vinster</span></div>
+            <div class="card"><b>31</b><span>Poäng totalt</span></div>
+            <div class="card"><b class="red">7</b><span>Rundor som impostor</span></div>
+          </div>
+        </div>
+        <div class="footer"><button class="btn btn-primary">▣ Visa min QR-kod</button></div>
+      </div>
+      <figcaption>12 · Profil med statistik</figcaption>
+    </figure>
+
+    <!-- 13. My QR -->
+    <figure>
+      <div class="phone">
+        <div class="topbar"><span class="back">← Profil</span><div class="logo">Impostor<span>.</span></div></div>
+        <div class="screen center" style="gap:18px">
+          <div class="avatar a3 emoji" style="width:56px; height:56px; font-size:28px">🦊</div>
+          <div class="display d-l" style="margin-top:-6px">Sara</div>
+          <div class="qr-card"><svg class="qr" data-seed="7" viewBox="0 0 29 29" shape-rendering="crispEdges"></svg></div>
+          <p class="muted" style="font-size:14px">Låt spelledaren skanna koden<br>för att lägga till dig i spelet.</p>
+          <div class="timer"><div class="bar"><i></i></div><p class="hint" style="margin-top:6px">Ny kod om 0:54</p></div>
+        </div>
+        <div class="footer"><button class="btn btn-secondary">Stäng</button></div>
+      </div>
+      <figcaption>13 · Min QR-kod (förnyas automatiskt)</figcaption>
+    </figure>
+
+  </div>
 </div>
+<script>
+  // Mock QR pattern for the preview only (the app uses qrcode.react).
+  document.querySelectorAll("svg.qr").forEach(svg => {
+    const n = 29, ns = "http://www.w3.org/2000/svg";
+    let s = Number(svg.dataset.seed) || 1;
+    const rand = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    const finder = (x, y) => (x >= 0 && x < 7 && y >= 0 && y < 7)
+      ? (x === 0 || x === 6 || y === 0 || y === 6 || (x > 1 && x < 5 && y > 1 && y < 5)) : null;
+    let d = "";
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+      const f = finder(x, y) ?? finder(x - (n - 7), y) ?? finder(x, y - (n - 7));
+      const inZone = (x < 8 && y < 8) || (x > n - 9 && y < 8) || (x < 8 && y > n - 9);
+      if (inZone ? f : rand() < .48) d += `M${x} ${y}h1v1h-1z`;
+    }
+    const p = document.createElementNS(ns, "path");
+    p.setAttribute("d", d); p.setAttribute("fill", "#14122B");
+    svg.appendChild(p);
+  });
+</script>
 </body>
 </html>
