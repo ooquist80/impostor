@@ -38,6 +38,9 @@ backend/
   tests/                    # SQLite in-memory override of get_db; one file per router
 frontend/
   (Vite React TS scaffold, vite.config.ts with basic-ssl + /api proxy)
+  CLAUDE.md                 # lasting design/code rules for this folder (see Design)
+  src/styles/tokens.css     # copied from design/preview.html :root
+  src/components/ui/        # Button, Card, Chip, Avatar, PlayerRow, ScoreRow, Badge, Toast, BottomSheet, Screen
   src/api.ts                # all fetch calls, attaches the Bearer token when logged in
   src/auth.ts               # token in localStorage, useAuth() hook
   src/App.tsx               # view switch (game/account) + game phase state machine
@@ -146,16 +149,61 @@ This is implemented as a pure function, `scoreRound(players, impostor, accused) 
 `gameSummary(scores, impostorRounds, round)` builds the `POST /api/games` payload.
 
 ## Design
-`design/preview.html` (the "Spelkväll" design) is the visual reference. Its tokens become `frontend/src/styles/tokens.css`, using plain CSS with variables. Before implementation, the preview gets these new frames:
-- Login/register
-- Profile with stats
-- The full-screen QR code
-- Setup with a scanned registered player
-- The QR scanner modal
+`design/preview.html` (the "Spelkväll" design) is the **visual source of truth**. Open it and read its CSS and markup. Match it; don't reinterpret it.
+
+**Tokens.** Copy the `:root` block (colours, fonts, radii, shadow) as is into `frontend/src/styles/tokens.css`. Add the avatar palette (`.a1`–`.a5` in the preview) to it as `--avatar-1` … `--avatar-5`; these are also the colours players can pick on their profile. Load the Google Fonts link in `index.html`. Use plain CSS with variables (CSS Modules or one global stylesheet), with no UI library and no Tailwind.
+
+**Shared components** (in `src/components/ui/`, built from the preview's classes):
+- `Button` (primary/secondary/danger/scan)
+- `Card`
+- `Chip`
+- `Avatar` (letter for guests, emoji + colour for registered players)
+- `PlayerRow`
+- `ScoreRow`
+- `Badge`
+- `Toast`
+- `BottomSheet`
+- `Screen` (top bar + content + bottom footer)
+
+Screens are composed from these components. A screen does not style things on its own.
+
+**Frame → component**
+| Frame | Component |
+|---|---|
+| 1 | `Setup.tsx` |
+| 2–4 | `Reveal.tsx` (pass, word, impostor) |
+| 5 | `Play.tsx` |
+| 6 | `Vote.tsx` |
+| 7, 8, 8b | `End.tsx` (correct, wrong, "Ändra" sheet via `CategoryPicker`) |
+| 9 | `Scoreboard.tsx` |
+| 10 | `QrScanner.tsx` |
+| 11 | `account/Login.tsx` |
+| 12 | `account/Profile.tsx` |
+| 13 | `account/MyQr.tsx` |
+
+**Rules the mock-up can't show**
+- Use only the token colours, never raw hex values in components. `--impostor` red is reserved for the impostor reveal, "Avslöja bedragaren" and "Fel!". `--success` green is reserved for "Rätt!", points and registered/saved states.
+- One main action per screen, in the bottom footer. Buttons span the full width and are at least 52px tall.
+- Mobile first: a single column at most 420px wide, centred, with no horizontal scroll at 360px width.
+- The Swedish texts in the preview are the final wording. Texts missing from the preview (errors, empty states) follow the same tone: short, informal "du".
+- Disabled and error states follow `PLAN.md` (Game flow), not the mock-up.
+
+**Ignore in the preview:**
+- The page around the frames (header, style guide, gallery, phone frames).
+- The mock QR script. Use `qrcode.react`.
+- The example names, words and numbers.
+
+**Keeping it uniform later.** When the frontend is set up, react-specialist creates `frontend/CLAUDE.md` with these lasting rules. Claude Code loads it automatically for all future work in `frontend/`:
+- Always use the `tokens.css` variables. Never add new colours or fonts.
+- Reuse the components in `src/components/ui/` before creating new ones. New shared UI goes there.
+- One main action per screen, in the footer. Red is only for the impostor.
+- All UI text is in Swedish.
+
+After v1 is built, the code (`tokens.css` + `ui/`) is the source of truth. `design/preview.html` remains as the historical reference.
 
 ## Delegation
 - **fastapi-developer** agent: `docker-compose.yml`, `db/init/*`, `backend/` (models, security, all routes, tests).
-- **react-specialist** agent: `frontend/` (scaffold + vite config, `api.ts`, `auth.ts`, `game.ts` + tests, all components).
+- **react-specialist** agent: `frontend/` (scaffold + vite config, `tokens.css`, `ui/` components, `api.ts`, `auth.ts`, `game.ts` + tests, all screens, `frontend/CLAUDE.md`). It gets the Design section above and is told to read `design/preview.html` first.
 - The API contract above is the interface between them, so both can run in parallel. I review and run the verification steps after.
 
 ## Verification
@@ -185,3 +233,6 @@ This is implemented as a pure function, `scoreRound(players, impostor, accused) 
    - On the game device, choose "Skanna QR". The player appears with their avatar.
    - Scanning the same QR again shows "Redan med". A QR older than 2 minutes is rejected.
    - Finish a game. The profile stats on the phone update.
+7. Design check: I take headless Chrome screenshots of each screen at 390px width and compare them side by side with the matching preview frame. I also check:
+   - `grep -rE "#[0-9a-fA-F]{3,6}\b" frontend/src --include=*.css --include=*.tsx` finds hex colours only in `tokens.css`.
+   - `frontend/CLAUDE.md` exists and contains the rules listed under Design.
