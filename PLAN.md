@@ -5,27 +5,19 @@ Empty repo. Build a web game where players sit together and pass one device arou
 
 Players can optionally **register** an account (name + password) on their own phone. A registered player has an avatar and saved stats, and joins a game by showing a QR code that the game device scans. Guests can still join by typing a name, and both kinds of player can be in the same game.
 
-Stack (chosen by user): React frontend, Python FastAPI backend, MariaDB storing a **Swedish** word/clue list plus player accounts and game results.
+The game itself runs only on the **game device**. The backend serves words, handles accounts, issues and redeems QR join tokens, and stores finished-game results. There are no live/multiplayer sessions. A registered player's phone is only used to log in and show a QR code. The game device does not need to be logged in, so anyone can host a game.
 
-## Assumptions (defaults picked, easy to change)
-- The frontend uses Vite + React + TypeScript. There is no router. Game phases are handled with component state, and a top-level `view` state switches between the game (`'game'`) and the account pages (`'account'`).
-- The game itself still runs only on the **game device**. The backend serves words, handles accounts, issues and redeems QR join tokens, and stores finished-game results. There are no live/multiplayer sessions. A registered player's phone is only used to log in and show a QR code.
-- The game device does not need to be logged in. Anyone can host a game.
-- Exactly one impostor per round. A new impostor, word and starting player are picked at random each round, so the same player can be impostor twice in a row.
-- Scores for the game in progress live in frontend state and are lost on page reload. When the players finish with "Avsluta", the results for **registered** players are saved to the DB. Guests' results are not saved.
-- Words may repeat between rounds. There is no "already used" tracking.
-- A docker-compose file runs MariaDB locally. The backend and frontend run natively in dev.
-- The UI language is Swedish, to match the word list.
-- **Camera access needs HTTPS** on phones. In dev, Vite runs with `@vitejs/plugin-basic-ssl` and `--host`, and proxies `/api` to `localhost:8000`, so phones on the LAN can reach both over one HTTPS origin (no mixed content, no CORS on the LAN).
+Stack (chosen by user): React frontend (Vite + TypeScript), Python FastAPI backend, MariaDB storing a **Swedish** word/clue list plus player accounts and game results. The UI language is Swedish, to match the word list.
 
 ## Layout
+A docker-compose file runs MariaDB locally. The backend and frontend run natively in dev.
 ```
 docker-compose.yml          # mariadb:11 service, volume, init SQL mounted
 db/init/01_schema.sql       # categories, words, players, games, game_players
 db/init/02_seed.sql         # ~60 Swedish word/clue pairs across categories
 backend/
-  pyproject.toml / requirements.txt   # fastapi, uvicorn, sqlalchemy, pymysql, pydantic-settings, pwdlib[argon2], pyjwt, pytest, httpx
-  app/main.py               # FastAPI app, CORS for Vite dev origin
+  requirements.txt          # fastapi, uvicorn, sqlalchemy, pymysql, pydantic-settings, pwdlib[argon2], pyjwt, pytest, httpx
+  app/main.py               # FastAPI app (no CORS: the browser reaches it only through the Vite proxy)
   app/config.py             # settings: DATABASE_URL, SECRET_KEY, token lifetimes
   app/db.py                 # engine/session from DATABASE_URL env
   app/models.py             # SQLAlchemy Category, Word, Player, Game, GamePlayer
@@ -60,6 +52,10 @@ frontend/
 ```
 Frontend libraries: `qrcode.react` to show QR codes and `qr-scanner` to read them from the camera.
 
+The frontend has no router. Game phases are handled with component state, and a top-level `view` state switches between the game (`'game'`) and the account pages (`'account'`).
+
+**Camera access needs HTTPS** on phones. In dev, Vite runs with `@vitejs/plugin-basic-ssl` and `--host`, and proxies `/api` to `localhost:8000`, so phones on the LAN reach both over one HTTPS origin (no mixed content, no CORS).
+
 ## Database schema
 - `categories(id PK, name VARCHAR UNIQUE)`, for example Djur, Mat, Platser, Yrken, Sport, Saker.
 - `words(id PK, word VARCHAR, clue VARCHAR, category_id FK)`. Example rows: `Elefant` with clue `Snabel`, and `Pizza` with clue `Italien`.
@@ -72,11 +68,13 @@ Frontend libraries: `qrcode.react` to show QR codes and `qr-scanner` to read the
 Stats are computed with an aggregate query over `game_players`, not stored as counters.
 
 ## API
-Words (unchanged):
+Words:
 - `GET /api/categories` returns `[{id, name}]`.
 - `GET /api/words/random?category_id=1&category_id=3` returns `{word, clue, category}`.
   - `category_id` is a repeatable query param (`list[int]`).
-  - The endpoint picks a random row from those categories with `ORDER BY RAND() LIMIT 1`. If the param is omitted, it picks from all categories.
+  - The endpoint picks a random row from those categories. If the param is omitted, it picks from all categories.
+  - The random pick must work on both MariaDB and the SQLite test DB (`RAND()` exists only in MariaDB). Use `func.random()` on SQLite and `func.rand()` on MariaDB, chosen from the session's dialect, or count the matching rows and fetch one at a random offset.
+  - Words may repeat between rounds. There is no "already used" tracking.
   - It returns 404 if no word matches.
 
 Accounts. Auth uses `Authorization: Bearer <auth token>`, a JWT valid for 30 days.
@@ -121,9 +119,9 @@ Games:
    - Remove buttons are hidden when only 3 entries are left. Names (guest names and usernames) are trimmed and must be non-empty and unique, case-insensitively.
    - **Categories**: categories are fetched from `/api/categories` and shown as toggleable chips or checkboxes, so several can be selected. A "Välj alla" / "Avmarkera alla" toggle sits above them. All categories are selected by default.
    - **"Starta spelet"** (the Swedish label for "start game") is disabled until there are at least 3 valid, unique names and at least 1 category. A short hint explains what's missing.
-2. **Start**: clicking "Starta spelet" fetches a random word from the selected categories, picks one impostor at random and one random starting player (any player, including the impostor), then goes to Reveal.
+2. **Start**: clicking "Starta spelet" fetches a random word from the selected categories, picks exactly one impostor at random and one random starting player (any player, including the impostor), then goes to Reveal. This is repeated for every round, so the same player can be impostor twice in a row.
 3. **Reveal** (the only time the device is passed around): for each player in setup order, show "Ge enheten till {namn}". Tapping shows "Ordet: X", or for the impostor "Du är bedragaren! Ledtråd: Y". Then "Dölj och skicka vidare". After the last player, go to Play. Registered players are shown with their avatar.
-4. **Play**: the device stays on the table. The screen shows "{namn} börjar!" for the random starting player, a short instruction to discuss, and one button, "Avslöja bedragaren". There are no turns or rounds after that.
+4. **Play**: the device stays on the table. The screen shows "{namn} börjar!" for the random starting player, a short instruction to discuss, and one button, "Avslöja bedragaren". The app does not handle turns; the discussion happens off-screen.
 5. **Vote**: tapping "Avslöja bedragaren" opens this screen. The impostor is not shown yet. It lists all players in the game. The group taps the player they think is the impostor, then confirms with "Bekräfta".
 6. **End (round result)**: the impostor is shown only here, after a pick has been confirmed. This completes the round. It shows whether the guess was right ("Rätt!" or "Fel!"), who the real impostor was, the word and clue, and the points awarded this round. Then the players choose:
    - **Category row** (above the buttons): shows the current categories, for example "Kategorier: Djur · Mat · Sport", with an **"Ändra"** link. "Ändra" opens a bottom sheet with the same category chips and "Välj alla" toggle as Setup, pre-selected with the current categories. "Spara" applies the change and is disabled when no category is selected. "Avbryt" closes the sheet without changing anything.
@@ -131,6 +129,7 @@ Games:
    - **"Avsluta"**: goes to Scoreboard.
 7. **Scoreboard**: shows every player's total points, sorted highest first, plus the number of rounds played.
    - If any registered players took part, it calls `POST /api/games` once on mount with their results.
+     - A `useRef` flag guards the call so it runs only once, even when React StrictMode mounts the component twice in dev. Without it the game would be saved twice and stats doubled. "Försök igen" bypasses the guard.
      - `won` is true for everyone tied for the highest total.
      - `impostor_rounds` is counted in App state.
    - A small line under the list shows the save status: "Statistik sparad för Anna, Erik" or "Kunde inte spara statistik – Försök igen".
@@ -142,11 +141,14 @@ Points are awarded once per round, when the vote is confirmed:
 - **Wrong guess** (the selected player is not the impostor): the impostor gets **2 p**. Everyone else gets 0.
 
 This is implemented as a pure function, `scoreRound(players, impostor, accused) -> Record<player, points>`. Its result is added to the running totals held in `App.tsx` state:
-- `scores: Record<string, number>`
+- `players: Player[]`, where `Player` is `{name, kind: 'guest' | 'registered', participantToken?, avatar?}`. Registered players get `participantToken` and `avatar` from the redeem call.
+- `scores: Record<string, number>`, keyed by player name (names are unique)
 - `impostorRounds: Record<string, number>`
 - `round: number`
 
-`gameSummary(scores, impostorRounds, round)` builds the `POST /api/games` payload.
+`gameSummary(players, scores, impostorRounds, round)` builds the `POST /api/games` payload, taking each registered player's `participantToken` from `players`.
+
+Scores for the game in progress live only in frontend state and are lost on page reload. When the players finish with "Avsluta", the results for **registered** players are saved to the DB. Guests' results are not saved.
 
 ## Design
 `design/preview.html` (the "Spelkväll" design) is the **visual source of truth**. Open it and read its CSS and markup. Match it; don't reinterpret it.
@@ -226,8 +228,7 @@ After v1 is built, the code (`tokens.css` + `ui/`) is the source of truth. `desi
    - Voting for the right player and for a wrong one both show the correct result, impostor and word.
    - Play 2–3 rounds with "Nästa runda" (one correct and one wrong guess), then "Avsluta". The scoreboard totals match the scoring rules.
    - On a round result, open "Ändra", pick a single category and press "Spara". The next round's word comes from that category. "Avbryt" leaves the categories unchanged, and "Spara" is disabled with nothing selected.
-   - "Nytt spel" keeps the most recent category selection in Setup.
-   - "Nytt spel" returns to Setup with the names kept and the scores reset.
+   - "Nytt spel" returns to Setup with the names and the most recent category selection kept, and the scores reset.
 6. QR flow (two devices, or a laptop as the game device and a phone over `https://<lan-ip>:5173`):
    - Register on the phone and open "Visa min QR-kod".
    - On the game device, choose "Skanna QR". The player appears with their avatar.
