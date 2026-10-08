@@ -1,7 +1,7 @@
 # Impostor – pass-and-play word game (v1)
 
 ## Context
-Empty repo. Build a web game where players sit together and pass one device around. Each player privately reveals either the secret word, or, if they are the impostor, a clue to it. After the reveal the device is put down and the players discuss off-screen while the impostor tries to blend in. The app handles setup, the private reveal, and a final step where the group picks who they think the impostor is and the app shows whether they were right. A game consists of one or more rounds, and points are tracked across rounds.
+The repo contains only planning files and the design mock-up (`design/preview.html`). Build a web game where players sit together and pass one device around. Each player privately reveals either the secret word, or, if they are the impostor, a clue to it. After the reveal the device is put down and the players discuss off-screen while the impostor tries to blend in. The app handles setup, the private reveal, and a final step where the group picks who they think the impostor is and the app shows whether they were right. A game consists of one or more rounds, and points are tracked across rounds.
 
 Players can optionally **register** an account (name + password) on their own phone. A registered player has an avatar and saved stats, and joins a game by showing a QR code that the game device scans. Guests can still join by typing a name, and both kinds of player can be in the same game.
 
@@ -10,16 +10,23 @@ The game itself runs only on the **game device**. The backend serves words, hand
 Stack (chosen by user): React frontend (Vite + TypeScript), Python FastAPI backend, MariaDB storing a **Swedish** word/clue list plus player accounts and game results. The UI language is Swedish, to match the word list.
 
 ## Layout
-A docker-compose file runs MariaDB locally. The backend and frontend run natively in dev.
+One `docker-compose.yml` runs the whole app for hosting (see Hosting). In dev, only its `db` service is started, and the backend and frontend run natively.
 ```
-docker-compose.yml          # mariadb:11 service, volume, init SQL mounted
-db/init/01_schema.sql       # categories, words, players, games, game_players
-db/init/02_seed.sql         # ~60 Swedish word/clue pairs across categories
+docker-compose.yml          # db, backend, web services; all config from .env
+.env.example                # every setting with comments; copied to .env (gitignored)
+Makefile                    # `make start`, `make update`, `make backup` for the server (see Hosting)
+backups/                    # gzipped DB dumps from `make backup` (gitignored)
+README.md                   # short hosting guide (see Hosting)
 backend/
-  requirements.txt          # fastapi, uvicorn, sqlalchemy, pymysql, pydantic-settings, pwdlib[argon2], pyjwt, pytest, httpx
-  app/main.py               # FastAPI app (no CORS: the browser reaches it only through the Vite proxy)
-  app/config.py             # settings: DATABASE_URL, SECRET_KEY, token lifetimes
-  app/db.py                 # engine/session from DATABASE_URL env
+  Dockerfile                # python:3.12-slim, installs requirements, copies app/ + alembic files, runs uvicorn on 0.0.0.0:8000
+  requirements.txt          # fastapi, uvicorn, sqlalchemy, alembic, pymysql, pydantic-settings, pwdlib[argon2], pyjwt, pytest, httpx
+  alembic.ini               # script_location = migrations; no URL here (env.py supplies it)
+  migrations/env.py         # URL from app.config settings, target_metadata = app.models.Base.metadata
+  migrations/versions/0001_initial_schema.py  # categories, words, players, games, game_players
+  migrations/versions/0002_seed_words.py      # ~60 Swedish word/clue pairs across categories (data migration)
+  app/main.py               # FastAPI app (no CORS: the browser reaches it only through the Vite proxy or Caddy)
+  app/config.py             # settings read from env and the root .env: MARIADB_*, DB_HOST, DB_PORT, SECRET_KEY, token lifetimes; builds the DB URL
+  app/db.py                 # engine/session from the settings' DB URL
   app/models.py             # SQLAlchemy Category, Word, Player, Game, GamePlayer
   app/security.py           # password hashing, create/verify tokens (auth, join, participant)
   app/deps.py               # get_db, get_current_player (Bearer auth token)
@@ -30,6 +37,8 @@ backend/
   tests/                    # SQLite in-memory override of get_db; one file per router
 frontend/
   (Vite React TS scaffold, vite.config.ts with basic-ssl + /api proxy)
+  Dockerfile                # stage 1 node:22-alpine runs `npm ci && npm run build`; stage 2 caddy:2-alpine serves dist/
+  Caddyfile                 # HTTPS, serves the SPA, reverse_proxy /api/* to backend:8000
   CLAUDE.md                 # lasting design/code rules for this folder (see Design)
   src/styles/tokens.css     # copied from design/preview.html :root
   src/components/ui/        # Button, Card, Chip, Avatar, PlayerRow, ScoreRow, Badge, Toast, BottomSheet, Screen
@@ -60,12 +69,31 @@ The frontend has no router. Game phases are handled with component state, and a 
 - `categories(id PK, name VARCHAR UNIQUE)`, for example Djur, Mat, Platser, Yrken, Sport, Saker.
 - `words(id PK, word VARCHAR, clue VARCHAR, category_id FK)`. Example rows: `Elefant` with clue `Snabel`, and `Pizza` with clue `Italien`.
 - `players(id PK, username VARCHAR(30) UNIQUE, password_hash, avatar_emoji VARCHAR(8), avatar_color CHAR(7), created_at)`.
-  - Usernames are case-insensitive: they are stored as typed, and uniqueness is checked on the lowercased name.
+  - Usernames are case-insensitive: they are stored as typed (trimmed). Uniqueness is enforced in two places:
+    - `register` checks for an existing `func.lower(username) == username.lower()` before inserting and returns 409. This also works on SQLite, so the tests cover it.
+    - The `UNIQUE` index on `username` uses the case-insensitive Swedish collation, so it catches the race where two registrations pass the check at the same time. An `IntegrityError` on insert is also turned into 409.
+    - "Åsa" and "Asa" are different names; "Åsa" and "åsa" are the same.
   - Defaults: a random colour from the design palette and the emoji 🙂.
 - `games(id PK, finished_at, rounds INT)`.
 - `game_players(game_id FK, player_id FK, points INT, impostor_rounds INT, won BOOL, PK(game_id, player_id))`. There is one row per registered player in a saved game.
 
 Stats are computed with an aggregate query over `game_players`, not stored as counters.
+
+**Character set.** Words and usernames contain å, ä and ö, and avatars are emoji (4-byte UTF-8), so everything is `utf8mb4`:
+- The `db` service starts MariaDB with `--character-set-server=utf8mb4 --collation-server=utf8mb4_uca1400_swedish_ai_ci`. The Swedish collation treats å, ä and ö as their own letters (so "Åsa" and "Asa" are different usernames) and sorts them last, as in Swedish.
+- Every table in the migrations sets `mariadb_charset="utf8mb4"` and `mariadb_collate="utf8mb4_uca1400_swedish_ai_ci"`, so the schema doesn't depend on server defaults.
+- The DB URL that `config.py` builds ends in `?charset=utf8mb4`, so the connection itself doesn't mangle emoji.
+
+## Migrations (Alembic)
+Alembic owns the schema **and** the seed words. There is no `db/init/` SQL; MariaDB starts with an empty database and `alembic upgrade head` builds it.
+- `app/models.py` is the source of truth for the schema. A schema change is made by editing the models, then running `alembic revision --autogenerate -m "..."`, then reading and fixing the generated file before committing it. Autogenerate misses some changes, such as renames, and can't do data changes.
+- Seed words are data migrations: `0002_seed_words` inserts the first set with `op.bulk_insert`. **New words or categories later go in a new migration**, so they reach running servers through `make update`. The `downgrade()` deletes exactly the rows its `upgrade()` inserted.
+- Migrations **never import `app.models`**. A data migration defines the tables and columns it touches inline with `sa.table("words", sa.column("word"), ...)`. The models change over time, but an old migration has to keep working against the schema as it was when it was written, for example on a fresh install that runs every migration from `0001`.
+- Revision files get readable, ordered ids (`0001`, `0002`, …) via `--rev-id`.
+- An applied migration is never edited. A fix goes in a new migration.
+- Every migration has a working `downgrade()`. Rolling back is a manual step: `docker compose run --rm backend alembic downgrade -1`.
+- **Caution:** MariaDB commits DDL immediately, so a migration that fails halfway can leave the schema partly changed and has to be fixed by hand. Keep each migration small, one change per file where practical.
+- The tests keep using SQLite with `Base.metadata.create_all`. Verification checks separately that the migrations and models agree.
 
 ## API
 Words:
@@ -97,6 +125,7 @@ QR join:
 
 Games:
 - `POST /api/games` needs no auth. It takes `{rounds, players: [{participant_token, points, impostor_rounds, won}]}` and returns 201 `{id}`.
+  - An empty `players` list gives 400. The frontend never sends one, because Scoreboard only calls this when registered players took part.
   - Each participant token is checked. An invalid token or a duplicate player gives 400.
   - This means stats can only be saved for players who were really scanned into a game.
   - The scores themselves are trusted from the client, which is acceptable for a party game.
@@ -203,13 +232,120 @@ Screens are composed from these components. A screen does not style things on it
 
 After v1 is built, the code (`tokens.css` + `ui/`) is the source of truth. `design/preview.html` remains as the historical reference.
 
+## Hosting
+Goal: any machine with Docker, including a Raspberry Pi, can host the app with `cp .env.example .env`, an edit of a few values, and `make start`.
+
+**Services** in `docker-compose.yml`. All use `restart: unless-stopped`, so the app comes back after the Pi reboots.
+- `db` (`mariadb:11`):
+  - It has a named volume for data. It creates the empty database and app user from `MARIADB_*`; the tables come from migrations.
+  - It is started with utf8mb4 / Swedish collation flags (see Database schema → Character set).
+  - A healthcheck uses `healthcheck.sh --connect --innodb_initialized`.
+  - Port 3306 is published only on `127.0.0.1:${DB_PORT}`, so native dev can reach it but the LAN can't.
+- `backend` (built from `backend/`):
+  - It gets only what it needs, listed explicitly under `environment:` (no `env_file`): `DB_HOST=db`, `DB_PORT=3306`, `MARIADB_DATABASE`, `MARIADB_USER`, `MARIADB_PASSWORD` and `SECRET_KEY`. The DB root password stays with the `db` container. `DB_PORT` is fixed at 3306 because the backend reaches `db` on the internal network, not through the published port.
+  - It waits on `depends_on: db: condition: service_healthy`.
+  - It is not published; only `web` reaches it.
+- `web` (built from `frontend/`):
+  - Caddy serves the built SPA and proxies `/api/*` to `backend:8000`. It publishes `${HTTP_PORT}` and `${HTTPS_PORT}`.
+  - A named volume for `/data` keeps Caddy's certificates and its local CA across restarts, so phones only accept the certificate once.
+
+**`.env`.** `.env.example` is committed with comments, and `.env` is gitignored. It holds only what a host may need to change:
+| Variable | Example | Purpose |
+|---|---|---|
+| `SITE_ADDRESS` | `raspberrypi.local` or `192.168.1.50` | Hostname or IP that players open; Caddy issues the cert for it |
+| `TLS_MODE` | `internal` (default) or `acme` | `internal`: Caddy's own CA, for LAN use. `acme`: Let's Encrypt, for a public domain in `SITE_ADDRESS` |
+| `HTTP_PORT` / `HTTPS_PORT` | `80` / `443` | Ports published by `web` |
+| `MARIADB_ROOT_PASSWORD` | – | DB root password |
+| `MARIADB_DATABASE` / `MARIADB_USER` / `MARIADB_PASSWORD` | `impostor` / `impostor` / – | App database and user, used by both `db` and `backend` |
+| `DB_PORT` | `3306` | Localhost-only DB port for native dev |
+| `SECRET_KEY` | – | JWT signing key; `.env.example` tells the host to generate one with `openssl rand -hex 32` |
+
+- The Caddyfile reads `{$SITE_ADDRESS}`. It switches TLS with `import tls_{$TLS_MODE}`, choosing between two snippets: `tls_internal` (`tls internal`) and `tls_acme` (empty, Caddy's automatic HTTPS).
+- `backend/app/config.py` builds the DB URL from `MARIADB_*`, `DB_HOST` (default `127.0.0.1`) and `DB_PORT`. Native dev therefore uses the same root `.env` with no extra file.
+  - The `.env` path is computed from `config.py`'s own location (`Path(__file__).resolve().parents[2] / ".env"`), so uvicorn, alembic and pytest find it whatever folder they are started from.
+  - A missing `.env` is ignored. In Docker it doesn't exist (it isn't in the `backend/` build context), and the values come from `environment:`. Real environment variables take precedence over the file.
+  - Settings unrelated to the backend in the shared `.env` (`SITE_ADDRESS`, ports, root password) are ignored (`extra="ignore"`).
+- Token lifetimes keep their code defaults and are not in `.env`.
+- `.env.example` documents the limits of non-default ports next to `HTTP_PORT`/`HTTPS_PORT`. They are only documented, not handled in code:
+  - With an `HTTPS_PORT` other than 443, players open `https://<SITE_ADDRESS>:<HTTPS_PORT>`.
+  - The automatic http→https redirect assumes 443, so with other ports, players must type the `https://` address with the port.
+  - `TLS_MODE=acme` (Let's Encrypt) requires `HTTP_PORT=80` and `HTTPS_PORT=443` to be reachable from the internet.
+
+**HTTPS on the LAN.** The camera needs HTTPS, so `TLS_MODE=internal` is the default.
+- Each phone shows a certificate warning the first time and has to accept it.
+- This should be verified on a real iPhone and Android phone. If the camera doesn't work after the warning is accepted, the README explains how to install Caddy's root CA from the `web` container (`/data/caddy/pki/authorities/local/root.crt`) on the phone.
+
+**Raspberry Pi.**
+- It needs a 64-bit OS (Raspberry Pi OS 64-bit) on a Pi 3B+, 4 or 5. Docker is installed with `curl -fsSL https://get.docker.com | sh`.
+- Every image the app uses (`mariadb:11`, `python:3.12-slim`, `node:22-alpine`, `caddy:2-alpine`) is multi-arch with `linux/arm64`. The Python dependencies have arm64 wheels (`argon2-cffi`) or are pure Python. The Dockerfiles must not pin `--platform` or download amd64-only binaries.
+- Images are built on the Pi itself with `--build`. There is no registry or cross-build step. The frontend build is the slowest part, and on a 1 GB Pi 3B+ it may need swap. The README mentions this.
+- `SITE_ADDRESS=<hostname>.local` uses the Pi's mDNS name, so it keeps working if its IP changes.
+
+**Makefile** (repo root) has four targets: `start` and `update` for the server, and `backup` and `migrate`, which `update` (and `start`, for `migrate`) call and which can also be run on their own. Targets that call other targets use `$(MAKE) <target>`, not plain `make`, so flags and variables like `BACKUP_KEEP` are passed on.
+- `make migrate` runs `docker compose run --rm backend alembic upgrade head`. `run` starts `db` first and waits for its healthcheck, so this works on a fresh install too. It is a no-op when the DB is already at head.
+- `make start` runs `docker compose build`, then `make migrate`, then `docker compose up -d`. The first start on a new server therefore creates the tables and seed words before the backend serves requests.
+- `make update` brings the server to the latest `main` from GitHub:
+  1. `git pull --ff-only origin main`. With `--ff-only`, the command stops with an error instead of creating a merge commit if the server's checkout has local commits. Git also refuses if uncommitted edits would be overwritten. The server never ends up in a half-merged state.
+  2. `docker compose build`. This builds the new images while the old containers keep serving.
+  3. `make backup`. Dumps the database before anything touches it (see below). If the backup fails, make stops here and nothing is migrated.
+  4. `make migrate`. The new backend image applies any new migrations (schema and seed words) to the live DB. If a migration fails, make stops here and the old containers stay up. To undo a half-applied migration, restore the backup from step 3 (see Restoring, case A).
+  5. `docker compose up -d`. This recreates only the containers whose image changed. The database and Caddy volumes are kept.
+  6. `docker image prune -f`. This removes the old image layers left behind by every rebuild, which would otherwise slowly fill a Pi's SD card.
+
+**Backups.** `make backup` can also be run on its own at any time.
+- It first runs `docker compose up -d --wait db`, so the DB is running and healthy even if the stack was stopped.
+- It dumps with `docker compose exec -T db sh -c 'mariadb-dump -uroot -p"$MARIADB_ROOT_PASSWORD" --single-transaction --databases "$MARIADB_DATABASE"' | gzip`.
+  - The password is expanded inside the container, so it never appears on the host's command line or in make's echo.
+  - `--single-transaction` gives a consistent dump without locking tables, so the app keeps working during the dump.
+- The output goes to `backups/impostor-YYYYMMDD-HHMMSS.sql.gz` in the repo directory. `backups/` is gitignored, so `git pull` never touches it.
+- The dump is written to a `.partial` file and renamed only when it succeeds, so a failed dump never looks like a valid backup.
+- The Makefile sets `SHELL := /bin/bash` and `.SHELLFLAGS := -eo pipefail -c`. Without pipefail, a failing `mariadb-dump` piped into `gzip` would count as success.
+- Retention: only the newest `BACKUP_KEEP` backups are kept (default 10, override with `make update BACKUP_KEEP=20`). This keeps the SD card from filling up.
+- The backups live on the same disk as the database. They protect against bad migrations and mistakes, not against a dead SD card. The README suggests copying `backups/` elsewhere now and then.
+
+**Restoring** is a manual, deliberate step that the README documents rather than a make target, because it overwrites live data. The code checkout is never changed; the server stays on `main`.
+
+The DB restore is the same in both cases below:
+1. `docker compose stop backend`
+2. `docker compose exec -T db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -e "DROP DATABASE \`$MARIADB_DATABASE\`"'`. The database is dropped first because loading a dump only replaces the tables the dump contains. A table created by a failed migration would otherwise survive and make the next attempt fail with "table already exists". The app user's grants are stored per database name, so they survive the drop.
+3. `gunzip -c backups/<file>.sql.gz | docker compose exec -T db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD"'`. The dump was made with `--databases`, so it recreates the database (with its utf8mb4 settings), every table and `alembic_version`.
+
+Then:
+- **Case A, a migration failed during `make update`.** Use the backup that step 3 of `make update` just made. Run `docker compose start backend`. This starts the **old** backend container, which `make update` never replaced because it stopped before `up -d`, so the code matches the restored schema. Fix the migration on `main`, then run `make update` again. Until then, don't run `make start` or `make migrate`; they would run the broken migration again.
+- **Case B, going back to an older backup** (for example after a mistake). Run `make migrate`, then `docker compose start backend`. Migrations only go forward, so `alembic upgrade head` brings the older schema up to the current code. The data is the backup's, and the code stays current.
+
+Migrations run as a separate make step, not in the backend container's startup command. A failed migration then stops `make update` with a visible error, instead of leaving the backend crash-looping under `restart: unless-stopped`.
+
+All targets are `.PHONY`. Each recipe line echoes what it does, and the first failing step stops the run. `make start` is the default target, so a plain `make` also starts the stack.
+
+**README.md** has these hosting steps:
+1. Install Docker, git and make. On Raspberry Pi OS Lite, install make with `sudo apt install make`.
+2. Clone the repo.
+3. `cp .env.example .env` and set the passwords, `SECRET_KEY` and `SITE_ADDRESS`.
+4. `make start`.
+5. Open `https://<SITE_ADDRESS>` and accept the certificate.
+
+It also covers:
+- Updating with `make update`, which also applies new migrations.
+- Rolling back one migration (see Migrations).
+- Backups: where they are, how many are kept, the restore steps, and a hint to copy `backups/` off the Pi now and then.
+- The dev setup: `docker compose up -d db`, then `cd backend && alembic upgrade head`, uvicorn and `npm run dev`.
+- How to add a migration (see Migrations).
+
 ## Delegation
-- **fastapi-developer** agent: `docker-compose.yml`, `db/init/*`, `backend/` (models, security, all routes, tests).
-- **react-specialist** agent: `frontend/` (scaffold + vite config, `tokens.css`, `ui/` components, `api.ts`, `auth.ts`, `game.ts` + tests, all screens, `frontend/CLAUDE.md`). It gets the Design section above and is told to read `design/preview.html` first.
+- **fastapi-developer** agent: `docker-compose.yml`, `.env.example`, `.gitignore` entries for `.env` and `backups/`, `backend/` (Dockerfile, config, models, Alembic setup + migrations `0001`/`0002`, security, all routes, tests), `Makefile` and `README.md`.
+- **react-specialist** agent: `frontend/` (scaffold + vite config, `Dockerfile`, `Caddyfile`, `tokens.css`, `ui/` components, `api.ts`, `auth.ts`, `game.ts` + tests, all screens, `frontend/CLAUDE.md`). It gets the Design section above and is told to read `design/preview.html` first.
+- The service names, ports and `.env` variables in Hosting are the shared contract for the Docker files.
 - The API contract above is the interface between them, so both can run in parallel. I review and run the verification steps after.
 
 ## Verification
-1. Run `docker compose up -d`, then check that the seeded rows exist with `docker compose exec db mariadb ... -e "select count(*) from words"`.
+1. Run `cp .env.example .env`, `docker compose up -d db` and `cd backend && alembic upgrade head`, then check:
+   - The seeded rows exist: `docker compose exec db mariadb ... -e "select count(*) from words"`.
+   - `alembic check` reports no differences between the models and the migrations.
+   - `alembic downgrade base` followed by `alembic upgrade head` succeeds, which proves the downgrades work.
+   - `SHOW CREATE TABLE players` shows `utf8mb4` and `utf8mb4_uca1400_swedish_ai_ci`.
+   - Registering `Åsa` with avatar 🦊 and reading it back via `/api/me` returns both unchanged. Registering `Asa` afterwards succeeds, while `åsa` gives 409.
+   - `grep -r "app.models\|from app" backend/migrations/versions` finds nothing.
 2. Run `cd backend && uvicorn app.main:app --reload`, then `curl localhost:8000/api/words/random`. It should return Swedish JSON.
 3. Run `pytest` in backend:
    - **Words:** filtering by multiple `category_id`s (the result is always within them), omitting the param, and the 404 case.
@@ -237,3 +373,24 @@ After v1 is built, the code (`tokens.css` + `ui/`) is the source of truth. `desi
 7. Design check: I take headless Chrome screenshots of each screen at 390px width and compare them side by side with the matching preview frame. I also check:
    - `grep -rE "#[0-9a-fA-F]{3,6}\b" frontend/src --include=*.css --include=*.tsx` finds hex colours only in `tokens.css`.
    - `frontend/CLAUDE.md` exists and contains the rules listed under Design.
+8. Hosting (full stack in Docker):
+   - On the dev machine, `make start` creates the schema and starts all three services. `docker compose ps` shows `db` as healthy.
+   - `https://<SITE_ADDRESS>` opens from a phone on the LAN after the certificate is accepted. Running the QR flow from step 6 there proves that `/api` proxying and camera access work.
+   - `docker compose restart` keeps the accounts and the accepted certificate (volumes persist).
+   - `docker buildx build --platform linux/arm64` succeeds for `backend/` and `frontend/`. This checks the Pi builds without needing a Pi. If a Pi is available, it runs the README steps from a fresh clone.
+   - `git status` doesn't show `.env` or `backups/`.
+   - `docker compose exec backend env | grep MARIADB_ROOT` finds nothing.
+9. Makefile:
+   - From a fresh clone with `.env` filled in, `make start` brings up all three services.
+   - Test `make update` in a second clone that acts as the server. Push a visible change (for example a UI text) to `main`, then run `make update` in the second clone. The change is live, and accounts created before the update still exist.
+   - **Test setup, so GitHub's `main` is never touched:**
+     1. Create a bare repo in the scratchpad: `git clone --bare . <scratch>/origin.git`.
+     2. Clone the server copy from it: `git clone <scratch>/origin.git <scratch>/server`. In the server copy, `origin` is the bare repo, so `make update` (`git pull origin main`) pulls from it.
+     3. Push test commits from a throwaway branch in the dev clone with `git push <scratch>/origin.git HEAD:main`.
+     4. Afterwards, delete the scratch repos and the throwaway branch. Nothing is pushed to GitHub.
+   - Schema update: on the throwaway branch, add a test migration (for example a nullable column plus one new seed word) and push it to the bare repo. `make update` in the server copy applies it: `docker compose run --rm backend alembic current` shows the new head, the new word can be drawn, and existing accounts and stats still exist.
+   - Failed migration (case A): push a migration that fails halfway, for example one that creates a table and then runs invalid SQL. `make update` stops at migrate, and the site keeps working. Follow the case A restore steps. The leftover table is gone and the old backend works. Then push a fixed migration; `make update` succeeds.
+   - With a local commit, or an uncommitted edit to a file the pushed change also touches, in the server clone, `make update` fails at the `git pull` step and leaves the running containers untouched.
+   - Backup: `make backup` creates a non-empty `backups/impostor-*.sql.gz`, and `make` echoes no password. After 12 runs with `BACKUP_KEEP=10`, exactly 10 files remain.
+   - Failing backup: with `MARIADB_ROOT_PASSWORD` set wrong in `.env`, `make update` stops at the backup step, leaves no `.partial` file behind, and doesn't run migrations.
+   - Restore (case B): create an account, take a backup, delete the account in the DB, then follow the case B restore steps. The account is back and `git status` in the server copy still shows branch `main`.
