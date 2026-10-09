@@ -236,6 +236,26 @@
   .bsheet .chip { background: var(--surface-2); }
   .bsheet .chip.on { background: rgba(255,181,71,.14); }
 
+  /* ---------- Rules sheet ---------- */
+  .topbar-actions { display: flex; align-items: center; gap: 8px; }
+  .rules-btn { height: 36px; padding: 0 14px; border-radius: var(--radius-pill); border: 1.5px solid var(--border); background: var(--surface-2); color: var(--text); display: flex; align-items: center; font: 600 13px var(--font-body); }
+  .rules { display: grid; gap: 14px; max-height: 440px; overflow-y: auto; padding-right: 4px; }
+  .rules h4 { font: 700 15px var(--font-display); display: flex; gap: 8px; align-items: baseline; }
+  .rules h4 span { color: var(--accent); }
+  .rules p { font-size: 14px; color: var(--muted); margin-top: 2px; }
+  .rules b { color: var(--text); font-weight: 600; }
+
+  /* ---------- Anonymous vote & tally ---------- */
+  .tally { display: grid; gap: 6px; width: 100%; }
+  .tally .player { padding: 6px 12px; font-size: 15px; text-align: left; }
+  .tally .avatar { width: 32px; height: 32px; font-size: 14px; }
+  .tally .avatar.emoji { font-size: 17px; }
+  .tally .votes { margin-left: auto; font-size: 13px; color: var(--muted); }
+  .tally .badge { min-width: 52px; justify-content: center; }
+  .badge.zero { color: var(--muted); background: var(--surface-2); }
+  .tally-head { width: 100%; display: flex; justify-content: space-between; padding: 0 12px; }
+  .done { width: 88px; height: 88px; border-radius: 50%; display: grid; place-items: center; font-size: 40px; color: var(--accent); background: rgba(255,181,71,.12); border: 2px solid rgba(255,181,71,.5); }
+
   @media (max-width: 420px) {
     body { padding: 24px 16px 60px; }
     .page h1 { font-size: 32px; }
@@ -283,7 +303,7 @@
         <button class="btn btn-primary">Primär knapp</button>
         <button class="btn btn-secondary">Sekundär knapp</button>
         <button class="btn btn-primary" disabled>Inaktiverad</button>
-        <div class="chips"><span class="chip on">Djur</span><span class="chip">Mat</span><span class="badge green">+1 p</span><span class="badge red">+2 p</span></div>
+        <div class="chips"><span class="chip on">Djur</span><span class="chip">Mat</span><span class="badge green">+1 p</span><span class="badge red">+3 p</span><span class="badge zero">0 p</span></div>
       </div>
     </div>
   </div>
@@ -295,7 +315,7 @@
     <!-- 1. Setup -->
     <figure>
       <div class="phone">
-        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="profile-btn">👤</div></div>
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="topbar-actions"><span class="rules-btn">Regler</span><div class="profile-btn">👤</div></div></div>
         <div class="screen">
           <div class="card">
             <div class="card-title">Spelare <span class="muted" style="font:500 13px var(--font-body)">4 st</span></div>
@@ -324,6 +344,32 @@
         </div>
       </div>
       <figcaption>1 · Setup: gäst + registrerad spelare</figcaption>
+    </figure>
+
+    <!-- 1b. Setup – rules sheet -->
+    <figure>
+      <div class="phone">
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="topbar-actions"><span class="rules-btn">Regler</span><div class="profile-btn">👤</div></div></div>
+        <div class="screen">
+          <div class="card"><div class="card-title">Spelare <span class="muted" style="font:500 13px var(--font-body)">4 st</span></div></div>
+        </div>
+        <div class="scrim"></div>
+        <div class="bsheet">
+          <div class="grip"></div>
+          <div class="display d-m">Så spelar ni</div>
+          <div class="rules">
+            <div><h4>Idén</h4><p>Alla utom en får samma hemliga ord. <b>Bedragaren</b> får bara en ledtråd och försöker smälta in.</p></div>
+            <div><h4><span>1</span>Förbered</h4><p>Minst 3 spelare. Skriv in namn, eller skanna QR-koden hos den som har konto. Välj kategorier.</p></div>
+            <div><h4><span>2</span>Se ditt ord</h4><p>Skicka runt enheten. Titta i hemlighet, dölj och skicka vidare.</p></div>
+            <div><h4><span>3</span>Diskutera</h4><p>Den som börjar säger ett ord som hör ihop med ordet, sedan går det runt. Avslöja inte ordet! När de flesta vill rösta trycker ni på <b>Avslöja bedragaren</b>.</p></div>
+            <div><h4><span>4</span>Rösta</h4><p>Enheten går runt igen och alla röstar i hemlighet, bedragaren också. Du kan inte rösta på dig själv.</p></div>
+            <div><h4><span>5</span>Poäng</h4><p>Röstar du på bedragaren får du <b>1 p</b>. Bedragaren får <b>1 p för varje fel röst</b>.</p></div>
+            <div><h4>Fler rundor</h4><p>Kör <b>Nästa runda</b> så länge ni vill och byt kategorier mellan rundorna. Flest poäng när ni avslutar vinner.</p></div>
+          </div>
+          <button class="btn btn-secondary">Stäng</button>
+        </div>
+      </div>
+      <figcaption>1b · Setup: regler</figcaption>
     </figure>
 
     <!-- 2. Reveal – pass -->
@@ -394,7 +440,7 @@
           <div class="avatar big a1">A</div>
           <div class="display d-l" style="margin-top:8px"><span class="amber">Anna</span> börjar!</div>
           <div class="card" style="text-align:left; margin-top:12px">
-            <p class="muted" style="font-size:14px">Lägg ner enheten. Säg ett ord var, i tur och ordning, som hör ihop med ordet. Diskutera sedan vem som är bedragaren.</p>
+            <p class="muted" style="font-size:14px">Lägg ner enheten. Säg ett ord var, i tur och ordning, som hör ihop med ordet. Diskutera sedan vem som är bedragaren. När de flesta vill rösta trycker ni på knappen.</p>
           </div>
         </div>
         <div class="footer"><button class="btn btn-danger">Avslöja bedragaren</button></div>
@@ -402,25 +448,58 @@
       <figcaption>5 · Play</figcaption>
     </figure>
 
-    <!-- 6. Vote -->
+    <!-- 6a. Vote – pass -->
+    <figure>
+      <div class="phone">
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
+        <div class="screen center">
+          <div class="eyebrow">Röstning · 2 av 4</div>
+          <div class="display d-l">Ge enheten till<br><span class="amber">Erik</span></div>
+          <div class="reveal-card">
+            <div>
+              <div class="tap">🗳️</div>
+              <p class="muted" style="margin-top:12px">Din röst är hemlig.<br>Se till att ingen annan tittar!</p>
+            </div>
+          </div>
+        </div>
+        <div class="footer"><button class="btn btn-primary">Rösta</button></div>
+      </div>
+      <figcaption>6a · Röstning: skicka vidare</figcaption>
+    </figure>
+
+    <!-- 6b. Vote – pick -->
     <figure>
       <div class="phone">
         <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
         <div class="screen">
           <div>
-            <div class="display d-m">Vem är bedragaren?</div>
-            <p class="muted" style="font-size:14px; margin-top:4px">Välj den ni tror och bekräfta.</p>
+            <div class="eyebrow">Erik röstar</div>
+            <div class="display d-m" style="margin-top:4px">Vem är bedragaren?</div>
+            <p class="muted" style="font-size:14px; margin-top:4px">Ingen får veta vad du röstar på. Du kan ändra dig tills du bekräftar.</p>
           </div>
           <div class="stack">
             <div class="player"><div class="avatar a1">A</div>Anna<span class="radio"></span></div>
-            <div class="player"><div class="avatar a2">E</div>Erik<span class="radio"></span></div>
             <div class="player sel"><div class="avatar a3 emoji">🦊</div>Sara<span class="radio"></span></div>
             <div class="player"><div class="avatar a4">J</div>Johan<span class="radio"></span></div>
           </div>
         </div>
         <div class="footer"><button class="btn btn-primary">Bekräfta</button></div>
       </div>
-      <figcaption>6 · Vote</figcaption>
+      <figcaption>6b · Röstning: välj (du själv syns inte)</figcaption>
+    </figure>
+
+    <!-- 6c. Vote – done -->
+    <figure>
+      <div class="phone">
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
+        <div class="screen center">
+          <div class="done">✓</div>
+          <div class="display d-l" style="margin-top:8px">Rösten är lagd</div>
+          <p class="muted" style="font-size:14px">Dölj skärmen och ge enheten till <b style="color:var(--text)">Johan</b>.</p>
+        </div>
+        <div class="footer"><button class="btn btn-secondary">Dölj och skicka vidare</button></div>
+      </div>
+      <figcaption>6c · Röstning: klar (sista spelaren: "Visa resultatet")</figcaption>
     </figure>
 
     <!-- 7. End – correct -->
@@ -429,15 +508,17 @@
         <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
         <div class="screen center">
           <div class="display d-xl green">Rätt!</div>
-          <p class="muted"><b style="color:var(--text)">Sara</b> var bedragaren.</p>
+          <p class="muted"><b style="color:var(--text)">Sara</b> var bedragaren och fick flest röster.</p>
           <div class="facts">
             <div class="card"><span class="eyebrow">Ordet</span><b class="amber">Elefant</b></div>
             <div class="card"><span class="eyebrow">Ledtråd</span><b>Snabel</b></div>
           </div>
-          <div class="points">
-            <div class="player"><div class="avatar a1">A</div>Anna<span class="badge green">+1 p</span></div>
-            <div class="player"><div class="avatar a2">E</div>Erik<span class="badge green">+1 p</span></div>
-            <div class="player"><div class="avatar a4">J</div>Johan<span class="badge green">+1 p</span></div>
+          <div class="tally">
+            <div class="tally-head"><span class="eyebrow">Röster</span><span class="eyebrow">Poäng</span></div>
+            <div class="player"><div class="avatar a3 emoji">🦊</div>Sara 🕵️<span class="votes">2 röster</span><span class="badge red">+1 p</span></div>
+            <div class="player"><div class="avatar a2">E</div>Erik<span class="votes">1 röst</span><span class="badge green">+1 p</span></div>
+            <div class="player"><div class="avatar a1">A</div>Anna<span class="votes">0 röster</span><span class="badge green">+1 p</span></div>
+            <div class="player"><div class="avatar a4">J</div>Johan<span class="votes">0 röster</span><span class="badge zero">0 p</span></div>
           </div>
         </div>
         <div class="footer">
@@ -446,7 +527,7 @@
           <button class="btn btn-secondary">Avsluta</button>
         </div>
       </div>
-      <figcaption>7 · Rundresultat: rätt gissning</figcaption>
+      <figcaption>7 · Rundresultat: bedragaren fick flest röster</figcaption>
     </figure>
 
     <!-- 8. End – wrong -->
@@ -455,13 +536,17 @@
         <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
         <div class="screen center">
           <div class="display d-xl red">Fel!</div>
-          <p class="muted">Ni valde Erik, men <b style="color:var(--text)">Sara</b> var bedragaren.</p>
+          <p class="muted">Erik fick flest röster, men <b style="color:var(--text)">Sara</b> var bedragaren.</p>
           <div class="facts">
             <div class="card"><span class="eyebrow">Ordet</span><b class="amber">Elefant</b></div>
             <div class="card"><span class="eyebrow">Ledtråd</span><b>Snabel</b></div>
           </div>
-          <div class="points">
-            <div class="player"><div class="avatar a3 emoji">🦊</div>Sara <span class="muted" style="font-size:13px">🕵️ impostor</span><span class="badge red">+2 p</span></div>
+          <div class="tally">
+            <div class="tally-head"><span class="eyebrow">Röster</span><span class="eyebrow">Poäng</span></div>
+            <div class="player"><div class="avatar a2">E</div>Erik<span class="votes">2 röster</span><span class="badge zero">0 p</span></div>
+            <div class="player"><div class="avatar a4">J</div>Johan<span class="votes">1 röst</span><span class="badge zero">0 p</span></div>
+            <div class="player"><div class="avatar a3 emoji">🦊</div>Sara 🕵️<span class="votes">0 röster</span><span class="badge red">+3 p</span></div>
+            <div class="player"><div class="avatar a1">A</div>Anna<span class="votes">0 röster</span><span class="badge zero">0 p</span></div>
           </div>
         </div>
         <div class="footer">
@@ -470,7 +555,7 @@
           <button class="btn btn-secondary">Avsluta</button>
         </div>
       </div>
-      <figcaption>8 · Rundresultat: fel gissning</figcaption>
+      <figcaption>8 · Rundresultat: bedragaren klarade sig</figcaption>
     </figure>
 
     <!-- 8b. End – change categories sheet -->

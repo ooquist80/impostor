@@ -1,7 +1,7 @@
 # Impostor – pass-and-play word game (v1)
 
 ## Context
-The repo contains only planning files and the design mock-up (`design/preview.html`). Build a web game where players sit together and pass one device around. Each player privately reveals either the secret word, or, if they are the impostor, a clue to it. After the reveal the device is put down and the players discuss off-screen while the impostor tries to blend in. The app handles setup, the private reveal, and a final step where the group picks who they think the impostor is and the app shows whether they were right. A game consists of one or more rounds, and points are tracked across rounds.
+The repo contains only planning files and the design mock-up (`design/preview.html`). Build a web game where players sit together and pass one device around. Each player privately reveals either the secret word, or, if they are the impostor, a clue to it. After the reveal the device is put down and the players discuss off-screen while the impostor tries to blend in. The app handles setup, the private reveal, and a final step where, once a majority of the players want to vote, every player in turn secretly votes for who they think the impostor is, and the app shows the result. A game consists of one or more rounds, and points are tracked across rounds.
 
 Players can optionally **register** an account (name + password) on their own phone. A registered player has an avatar and saved stats, and joins a game by showing a QR code that the game device scans. Guests can still join by typing a name, and both kinds of player can be in the same game.
 
@@ -45,18 +45,19 @@ frontend/
   src/api.ts                # all fetch calls, attaches the Bearer token when logged in
   src/auth.ts               # token in localStorage, useAuth() hook
   src/App.tsx               # view switch (game/account) + game phase state machine
-  src/components/Setup.tsx      # guests by name + registered players by QR, categories, start button
+  src/components/Setup.tsx      # guests by name + registered players by QR, categories, "Regler" button, start button
+  src/components/Rules.tsx      # game rules as text, opened from Setup in a BottomSheet
   src/components/QrScanner.tsx  # camera modal, decodes QR, redeems the join token
   src/components/Reveal.tsx     # "Pass to X" → tap to reveal → hide → next
   src/components/Play.tsx       # single "Avslöja bedragaren" button, no turn handling
-  src/components/Vote.tsx       # pick the suspected impostor from the player list
-  src/components/End.tsx        # round result: right/wrong, real impostor + word + clue, points this round, category row + "Ändra" sheet, "Nästa runda" / "Avsluta"
+  src/components/Vote.tsx       # anonymous vote in turns: "Ge enheten till X" → pick a suspect → hide → next
+  src/components/End.tsx        # round result: right/wrong, real impostor + word + clue, vote tally, points this round, category row + "Ändra" sheet, "Nästa runda" / "Avsluta"
   src/components/CategoryPicker.tsx # chips + "Välj alla"/"Avmarkera alla", shared by Setup and the End sheet
   src/components/Scoreboard.tsx # final scores after "Avsluta", saves the result, "Nytt spel" (same players)
   src/components/account/Login.tsx     # login / register tabs
   src/components/account/Profile.tsx   # avatar picker, stats, "Visa min QR-kod"
   src/components/account/MyQr.tsx      # full-screen QR, auto-refreshes before expiry
-  src/game.ts               # pure logic: pickImpostor, pickStartingPlayer, validateSetup, scoreRound, gameSummary
+  src/game.ts               # pure logic: pickImpostor, pickStartingPlayer, validateSetup, tallyVotes, scoreRound, gameSummary
   src/game.test.ts          # vitest for pure logic
 ```
 Frontend libraries: `qrcode.react` to show QR codes and `qr-scanner` to read them from the camera.
@@ -148,11 +149,31 @@ Games:
    - Remove buttons are hidden when only 3 entries are left. Names (guest names and usernames) are trimmed and must be non-empty and unique, case-insensitively.
    - **Categories**: categories are fetched from `/api/categories` and shown as toggleable chips or checkboxes, so several can be selected. A "Välj alla" / "Avmarkera alla" toggle sits above them. All categories are selected by default.
    - **"Starta spelet"** (the Swedish label for "start game") is disabled until there are at least 3 valid, unique names and at least 1 category. A short hint explains what's missing.
+   - **"Regler"**: a small button in the top bar, next to the profile button (not the footer's main action, which stays "Starta spelet"), opens the rules in a `BottomSheet`, rendered by `Rules.tsx`. It is plain text with short headings, scrolls if it is taller than the screen, and closes with "Stäng" or by tapping outside. Closing it leaves the setup (players, categories) untouched. The text is in Swedish, in the same informal "du" tone, and covers:
+     - The idea: everyone but one gets the secret word; the impostor only gets a clue and tries to blend in.
+     - Setup: at least 3 players, guests by name or registered players by QR, and choosing categories.
+     - Reveal: pass the device, look at your word or clue in secret, hide it and pass it on.
+     - Discussion: the starting player begins; talk about the word without giving it away. When most of you want to vote, tap "Avslöja bedragaren".
+     - Voting: everyone votes in turn and in secret, the impostor too; you can't vote for yourself.
+     - Points: 1 p for each player who votes for the impostor, and 1 p to the impostor for every incorrect vote (see Scoring). Points add up over rounds, and the highest total wins.
+     - Rounds: "Nästa runda" or "Avsluta", and that categories can be changed between rounds.
+
+     The rules text is static in `Rules.tsx`. Any change to the game flow or Scoring must update it too.
 2. **Start**: clicking "Starta spelet" fetches a random word from the selected categories, picks exactly one impostor at random and one random starting player (any player, including the impostor), then goes to Reveal. This is repeated for every round, so the same player can be impostor twice in a row.
 3. **Reveal** (the only time the device is passed around): for each player in setup order, show "Ge enheten till {namn}". Tapping shows "Ordet: X", or for the impostor "Du är bedragaren! Ledtråd: Y". Then "Dölj och skicka vidare". After the last player, go to Play. Registered players are shown with their avatar.
-4. **Play**: the device stays on the table. The screen shows "{namn} börjar!" for the random starting player, a short instruction to discuss, and one button, "Avslöja bedragaren". The app does not handle turns; the discussion happens off-screen.
-5. **Vote**: tapping "Avslöja bedragaren" opens this screen. The impostor is not shown yet. It lists all players in the game. The group taps the player they think is the impostor, then confirms with "Bekräfta".
-6. **End (round result)**: the impostor is shown only here, after a pick has been confirmed. This completes the round. It shows whether the guess was right ("Rätt!" or "Fel!"), who the real impostor was, the word and clue, and the points awarded this round. Then the players choose:
+4. **Play**: the device stays on the table. The screen shows "{namn} börjar!" for the random starting player, a short instruction to discuss and to vote when most of the group is ready, and one button, "Avslöja bedragaren". The app does not handle turns; the discussion happens off-screen. The group decides off-screen when a **majority** wants to vote, and then taps the button. The app does not count who wants to vote.
+5. **Vote** (the device is passed around again): voting is **anonymous** and done **in turns**, in setup order, like Reveal. The impostor is not shown yet.
+   - For each player: "Ge enheten till {namn}" → tap to vote → the list of all **other** players (you can't vote for yourself) → pick one → "Bekräfta" → "Dölj och skicka vidare". Until "Bekräfta", the player can change their pick.
+   - **The impostor votes too**, on the same screen with the same texts, so nobody can tell who the impostor is from how the turns look. The impostor's vote is ignored in scoring and in the tally.
+   - Nobody's vote is shown to the next player, and no running tally is shown during the vote.
+   - Votes are held as `votes: Record<voter, accused>` in round state only. They are never sent to the backend, and who voted for whom is never shown.
+   - After "Bekräfta" a "Rösten är lagd" screen tells the voter who to pass to, with "Dölj och skicka vidare". For the last voter it says everyone has voted and the button is "Visa resultatet", which goes to End.
+6. **End (round result)**: the impostor is shown only here, after everyone has voted. This completes the round. It shows:
+   - The headline: **"Rätt!"** if the impostor got strictly more votes than any other player, otherwise **"Fel!"** (this includes a tie for most votes). The headline is only the group's verdict; points don't depend on it.
+   - Who the real impostor was, the word and the clue.
+   - One list of all players, sorted by votes received (most first), each row showing the votes they got and their points this round (`0 p` when none). The impostor is marked 🕵️ and their points badge is red. It shows counts only, not who voted for whom.
+
+   Then the players choose:
    - **Category row** (above the buttons): shows the current categories, for example "Kategorier: Djur · Mat · Sport", with an **"Ändra"** link. "Ändra" opens a bottom sheet with the same category chips and "Välj alla" toggle as Setup, pre-selected with the current categories. "Spara" applies the change and is disabled when no category is selected. "Avbryt" closes the sheet without changing anything.
    - **"Nästa runda"**: fetches a new random word from the current categories (the same as last round unless changed with "Ändra"), picks a new impostor and starting player, and goes straight to Reveal. Scores carry over. Players cannot be changed between rounds.
    - **"Avsluta"**: goes to Scoreboard.
@@ -165,11 +186,18 @@ Games:
    - "Nytt spel" goes back to Setup with the same players (guests and registered) and categories filled in, and all scores reset to 0.
 
 ## Scoring
-Points are awarded once per round, when the vote is confirmed:
-- **Correct guess** (the selected player is the impostor): every player except the impostor gets **1 p**. The impostor gets 0.
-- **Wrong guess** (the selected player is not the impostor): the impostor gets **2 p**. Everyone else gets 0.
+Points are awarded once per round, after the last vote. Each vote by a player other than the impostor counts on its own:
+- **Correct vote** (for the impostor): the voter gets **1 p**.
+- **Incorrect vote** (for anyone else): the impostor gets **1 p**. The voter gets 0.
+- The impostor's own vote gives no points to anyone.
 
-This is implemented as a pure function, `scoreRound(players, impostor, accused) -> Record<player, points>`. Its result is added to the running totals held in `App.tsx` state:
+So with 5 players, the impostor gets between 0 and 4 p per round.
+
+This is implemented as pure functions:
+- `tallyVotes(votes) -> Record<player, number>`, the number of votes each player got, ignoring the impostor's vote. `End` uses it for the tally and the "Rätt!"/"Fel!" headline.
+- `scoreRound(players, impostor, votes) -> Record<player, points>`.
+
+The `scoreRound` result is added to the running totals held in `App.tsx` state:
 - `players: Player[]`, where `Player` is `{name, kind: 'guest' | 'registered', participantToken?, avatar?}`. Registered players get `participantToken` and `avatar` from the redeem call.
 - `scores: Record<string, number>`, keyed by player name (names are unique)
 - `impostorRounds: Record<string, number>`
@@ -201,11 +229,11 @@ Screens are composed from these components. A screen does not style things on it
 **Frame → component**
 | Frame | Component |
 |---|---|
-| 1 | `Setup.tsx` |
+| 1, 1b | `Setup.tsx`, `Rules.tsx` (setup with the "Regler" top-bar button; rules sheet via `BottomSheet`) |
 | 2–4 | `Reveal.tsx` (pass, word, impostor) |
 | 5 | `Play.tsx` |
-| 6 | `Vote.tsx` |
-| 7, 8, 8b | `End.tsx` (correct, wrong, "Ändra" sheet via `CategoryPicker`) |
+| 6a, 6b, 6c | `Vote.tsx` (pass, pick with the voter left out, vote cast) |
+| 7, 8, 8b | `End.tsx` (impostor caught, impostor got away, both with the vote/points list; "Ändra" sheet via `CategoryPicker`) |
 | 9 | `Scoreboard.tsx` |
 | 10 | `QrScanner.tsx` |
 | 11 | `account/Login.tsx` |
@@ -355,14 +383,16 @@ It also covers:
 4. Run `npm test` (vitest) in frontend:
    - Exactly one impostor is picked, and the starting player is one of the players.
    - The setup validation works: min 3, unique names (case-insensitive, guests and registered together), and at least 1 category.
-   - `scoreRound` gives 1 p to each non-impostor and 0 to the impostor on a correct guess, and 2 p to the impostor only on a wrong guess.
+   - `scoreRound` gives 1 p to each player who voted for the impostor, 1 p to the impostor per incorrect vote, and nothing for the impostor's own vote. Example: 4 players, two vote correctly and one incorrectly gives 1 p each to the two correct voters and 1 p to the impostor.
+   - `tallyVotes` ignores the impostor's vote.
    - `gameSummary` marks every tied leader as `won` and includes only registered players.
 5. Run `npm run dev` and play through a 3-player game with guests only in the browser:
+   - On Setup, "Regler" opens the rules sheet; it describes the current voting and scoring, scrolls at 360px width, and "Stäng" returns to Setup with the entered names and categories kept.
    - The impostor sees only the clue.
    - After the reveal, Play shows a starting player and the "Avslöja bedragaren" button.
-   - Vote never shows the impostor.
-   - Voting for the right player and for a wrong one both show the correct result, impostor and word.
-   - Play 2–3 rounds with "Nästa runda" (one correct and one wrong guess), then "Avsluta". The scoreboard totals match the scoring rules.
+   - Vote asks each player in turn, never shows the impostor, never lists the voter themselves, and never shows earlier votes. The impostor's vote turn looks the same as everyone else's.
+   - End shows the correct headline, impostor, word and vote counts, but not who voted for whom.
+   - Play 2–3 rounds with "Nästa runda" (one round where everyone votes correctly, one with mixed votes), then "Avsluta". The scoreboard totals match the scoring rules.
    - On a round result, open "Ändra", pick a single category and press "Spara". The next round's word comes from that category. "Avbryt" leaves the categories unchanged, and "Spara" is disabled with nothing selected.
    - "Nytt spel" returns to Setup with the names and the most recent category selection kept, and the scores reset.
 6. QR flow (two devices, or a laptop as the game device and a phone over `https://<lan-ip>:5173`):
