@@ -5,7 +5,7 @@ SHELL := /bin/bash
 
 BACKUP_KEEP ?= 10
 
-.PHONY: start update backup migrate
+.PHONY: start update backup migrate import
 
 # Build, apply migrations, then start the whole stack.
 start:
@@ -25,6 +25,10 @@ update:
 # Apply pending migrations (starts db and waits for it to be healthy).
 migrate:
 	docker compose run --rm backend alembic upgrade head
+
+# Import missing words from backend/data/words.csv (gitignored, copied here by hand).
+import:
+	docker compose run --rm backend python -m app.seed
 
 # Gzipped dump to backups/, keeping the newest BACKUP_KEEP files.
 # The root password is expanded inside the container, never on the host.

@@ -2,8 +2,6 @@ import os
 
 # Must be set before app modules are imported (Settings requires a key).
 os.environ.setdefault("SECRET_KEY", "test-secret-key-test-secret-key-0123456789")
-# Keep the startup word import away from the real database (a missing file is skipped).
-os.environ["WORDS_CSV"] = "/nonexistent/words.csv"
 
 import pytest
 from fastapi.testclient import TestClient

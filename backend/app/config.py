@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     db_port: int = 3306
     secret_key: str
 
-    # Word list imported on startup (see app/seed.py). Gitignored; a missing file is skipped.
+    # Word list read by `python -m app.seed` / `make import`. Gitignored.
     words_csv: Path = DEFAULT_WORDS_CSV
 
     # Token lifetimes (seconds). Not in .env; code defaults.

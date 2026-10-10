@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import select
 
 from app.models import Category, Word
-from app.seed import import_words, import_words_file, read_words
+from app.seed import import_words, main, read_words
 
 
 def write(tmp_path, text):
@@ -56,6 +56,11 @@ def test_import_twice_adds_nothing(db):
     assert import_words(db, rows) == (0, 0)
 
 
-def test_missing_file_is_skipped(db, tmp_path):
-    import_words_file(db, tmp_path / "missing.csv")
-    assert words_in(db) == []
+def test_main_fails_on_missing_file(tmp_path, capsys):
+    assert main([str(tmp_path / "missing.csv")]) == 1
+    assert "not found" in capsys.readouterr().err
+
+
+def test_main_fails_on_malformed_file(tmp_path, capsys):
+    assert main([str(write(tmp_path, "category,word,clue\nDjur,,Skog\n"))]) == 1
+    assert ":2:" in capsys.readouterr().err

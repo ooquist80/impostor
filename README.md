@@ -10,8 +10,9 @@ Any machine with Docker can host the app, including a Raspberry Pi.
 2. Clone the repo.
 3. `cp .env.example .env` and set the passwords, `SECRET_KEY` (`openssl rand -hex 32`) and `SITE_ADDRESS` (for example `raspberrypi.local` or the machine's LAN IP).
 4. Copy the word list to `backend/data/words.csv` (see [Word list](#word-list)).
-5. `make start`. This builds the images, creates the tables, starts the stack and imports the word list.
-6. Open `https://<SITE_ADDRESS>` and accept the certificate warning.
+5. `make start`. This builds the images, creates the tables and starts the stack.
+6. `make import` to load the word list.
+7. Open `https://<SITE_ADDRESS>` and accept the certificate warning.
 
 The camera (QR scanning) needs HTTPS, so `TLS_MODE=internal` (Caddy's own CA) is the default. Each phone shows a certificate warning the first time. If the camera still doesn't work after accepting it, install Caddy's root certificate on the phone. Copy it out of the web container with
 `docker compose cp web:/data/caddy/pki/authorities/local/root.crt .` and install it as a trusted CA on the phone.
@@ -28,12 +29,12 @@ Use a 64-bit OS (Raspberry Pi OS 64-bit) on a Pi 3B+, 4 or 5. All images are mul
 
 ## Word list
 
-The words are not in git. They live in `backend/data/words.csv`, which is gitignored, and the backend imports the file every time it starts. In Docker the folder is mounted read-only at `/app/data`. `WORDS_CSV` overrides the path.
+The words are not in git. They live in `backend/data/words.csv`, which is gitignored. `make import` loads it into the database; nothing imports it automatically. In Docker the folder is mounted read-only at `/app/data`. `WORDS_CSV` overrides the path.
 
 - Format: UTF-8 with the header `category,word,clue`, one word per line. Quote a value that contains a comma (`"Monsters, Inc."`). `backend/data/words.example.csv` shows the format.
 - The import only adds: new categories and words (matched on category + word, ignoring case) are inserted. Changing a clue or removing a line does not change the database; do that in SQL.
-- If the file is missing, the backend logs a warning and starts with the words it already has. A malformed file (wrong header, empty value) stops the backend from starting, with the line number in the log.
-- `git pull` never brings the list to a server. Copy it yourself, for example `scp backend/data/words.csv pi@raspberrypi.local:impostor/backend/data/`, then `docker compose restart backend`.
+- A missing or malformed file (wrong header, empty value) makes `make import` fail with the file name or line number, and nothing is imported.
+- `git pull` never brings the list to a server. Copy it yourself, for example `scp backend/data/words.csv pi@raspberrypi.local:impostor/backend/data/`, then run `make import`. The running game doesn't need a restart.
 
 ### Rolling back one migration
 
@@ -73,7 +74,8 @@ cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 alembic upgrade head              # schema
-uvicorn app.main:app --reload     # http://localhost:8000/api/docs, imports data/words.csv
+python -m app.seed                # import data/words.csv (only adds missing words)
+uvicorn app.main:app --reload     # http://localhost:8000/api/docs
 pytest                            # tests use in-memory SQLite
 
 cd ../frontend

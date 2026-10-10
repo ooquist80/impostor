@@ -34,7 +34,7 @@ services:
       MARIADB_PASSWORD: ${MARIADB_PASSWORD:?Set MARIADB_PASSWORD in .env}
       SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env (openssl rand -hex 32)}
     volumes:
-      # The word list (words.csv) is imported on startup. It is gitignored, so copy it here by hand.
+      # The word list (words.csv), read by `make import`. It is gitignored, so copy it here by hand.
       - ./backend/data:/app/data:ro
     depends_on:
       db:

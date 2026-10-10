@@ -1,20 +1,22 @@
 """Imports the word list from a CSV file (columns: category, word, clue).
 
+Run with `python -m app.seed [path]` (`make import` in Docker). The path
+defaults to the WORDS_CSV setting, backend/data/words.csv.
+
 The import only adds: categories and words missing from the database are
 inserted, and nothing already there is changed or removed. A word counts as
 present when its category already has a word with the same text.
 """
 import csv
-import logging
+import sys
 from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import settings
+from app.db import SessionLocal
 from app.models import Category, Word
-
-# uvicorn configures this logger, so the import shows up in `docker compose logs backend`.
-log = logging.getLogger("uvicorn.error")
 
 COLUMNS = ("category", "word", "clue")
 
@@ -59,10 +61,21 @@ def import_words(db: Session, rows: list[tuple[str, str, str]]) -> tuple[int, in
     return new_categories, new_words
 
 
-def import_words_file(db: Session, path: Path) -> None:
-    """Imports `path` if it exists. A missing file is logged and skipped."""
+def main(argv: list[str]) -> int:
+    path = Path(argv[0]) if argv else settings.words_csv
     if not path.is_file():
-        log.warning("Word list %s not found; skipping the word import", path)
-        return
-    categories, words = import_words(db, read_words(path))
-    log.info("Word import from %s: %d new categories, %d new words", path, categories, words)
+        print(f"Word list {path} not found", file=sys.stderr)
+        return 1
+    try:
+        rows = read_words(path)
+    except ValueError as err:
+        print(err, file=sys.stderr)
+        return 1
+    with SessionLocal() as db:
+        categories, words = import_words(db, rows)
+    print(f"Imported {path}: {categories} new categories, {words} new words")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

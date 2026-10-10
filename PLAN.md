@@ -23,8 +23,8 @@ backend/
   alembic.ini               # script_location = migrations; no URL here (env.py supplies it)
   migrations/env.py         # URL from app.config settings, target_metadata = app.models.Base.metadata
   migrations/versions/0001_initial_schema.py  # categories, words, players, games, game_players
-  app/main.py               # FastAPI app (no CORS: the browser reaches it only through the Vite proxy or Caddy); imports the word list on startup
-  app/seed.py               # reads data/words.csv (category,word,clue) and inserts missing categories and words
+  app/main.py               # FastAPI app (no CORS: the browser reaches it only through the Vite proxy or Caddy)
+  app/seed.py               # `python -m app.seed` / `make import`: reads data/words.csv (category,word,clue), inserts missing categories and words
   data/words.csv            # the word list, gitignored and copied to servers by hand; data/words.example.csv shows the format
   app/config.py             # settings read from env and the root .env: MARIADB_*, DB_HOST, DB_PORT, SECRET_KEY, token lifetimes; builds the DB URL
   app/db.py                 # engine/session from the settings' DB URL
@@ -89,10 +89,10 @@ Stats are computed with an aggregate query over `game_players`, not stored as co
 ## Migrations (Alembic)
 Alembic owns the schema. There is no `db/init/` SQL; MariaDB starts with an empty database and `alembic upgrade head` builds it. Words are not in migrations (see Word list).
 - `app/models.py` is the source of truth for the schema. A schema change is made by editing the models, then running `alembic revision --autogenerate -m "..."`, then reading and fixing the generated file before committing it. Autogenerate misses some changes, such as renames, and can't do data changes.
-- **Word list.** The words live in `backend/data/words.csv` (header `category,word,clue`), which is gitignored so the list never reaches GitHub. On startup (FastAPI lifespan) the backend imports it with `app/seed.py`:
+- **Word list.** The words live in `backend/data/words.csv` (header `category,word,clue`), which is gitignored so the list never reaches GitHub. `make import` (`docker compose run --rm backend python -m app.seed`) imports it; the backend never imports it on its own:
   - Add only: categories and words missing from the DB are inserted (a word matches on category + word, case-insensitive). Nothing is updated or removed.
-  - A missing file logs a warning and is skipped; a malformed file stops startup with the line number.
-  - In Docker, `./backend/data` is bind-mounted read-only at `/app/data`. `WORDS_CSV` overrides the path. The file is copied to each server by hand, and `docker compose restart backend` imports changes.
+  - A missing or malformed file makes the command exit non-zero with the file name or line number, and nothing is imported.
+  - In Docker, `./backend/data` is bind-mounted read-only at `/app/data`. `WORDS_CSV` overrides the path. The file is copied to each server by hand, then `make import` loads it.
 - Migrations **never import `app.models`**. A migration that touches data defines the tables and columns it touches inline with `sa.table("words", sa.column("word"), ...)`. The models change over time, but an old migration has to keep working against the schema as it was when it was written, for example on a fresh install that runs every migration from `0001`.
 - Revision files get readable, ordered ids (`0001`, `0002`, …) via `--rev-id`.
 - An applied migration is never edited. A fix goes in a new migration.
@@ -317,9 +317,9 @@ Goal: any machine with Docker, including a Raspberry Pi, can host the app with `
 - Images are built on the Pi itself with `--build`. There is no registry or cross-build step. The frontend build is the slowest part, and on a 1 GB Pi 3B+ it may need swap. The README mentions this.
 - `SITE_ADDRESS=<hostname>.local` uses the Pi's mDNS name, so it keeps working if its IP changes.
 
-**Makefile** (repo root) has four targets: `start` and `update` for the server, and `backup` and `migrate`, which `update` (and `start`, for `migrate`) call and which can also be run on their own. Targets that call other targets use `$(MAKE) <target>`, not plain `make`, so flags and variables like `BACKUP_KEEP` are passed on.
+**Makefile** (repo root) has five targets: `start` and `update` for the server, and `backup` and `migrate`, which `update` (and `start`, for `migrate`) call and which can also be run on their own, plus `import`, which loads the word list and is only run by hand. Targets that call other targets use `$(MAKE) <target>`, not plain `make`, so flags and variables like `BACKUP_KEEP` are passed on.
 - `make migrate` runs `docker compose run --rm backend alembic upgrade head`. `run` starts `db` first and waits for its healthcheck, so this works on a fresh install too. It is a no-op when the DB is already at head.
-- `make start` runs `docker compose build`, then `make migrate`, then `docker compose up -d`. The first start on a new server therefore creates the tables before the backend starts, and the backend imports the word list as it starts.
+- `make start` runs `docker compose build`, then `make migrate`, then `docker compose up -d`. The first start on a new server therefore creates the tables before the backend serves requests. The words are loaded separately with `make import`.
 - `make update` brings the server to the latest `main` from GitHub:
   1. `git pull --ff-only origin main`. With `--ff-only`, the command stops with an error instead of creating a merge commit if the server's checkout has local commits. Git also refuses if uncommitted edits would be overwritten. The server never ends up in a half-merged state.
   2. `docker compose build`. This builds the new images while the old containers keep serving.
@@ -376,13 +376,13 @@ It also covers:
 
 ## Verification
 1. Run `cp .env.example .env`, `docker compose up -d db` and `cd backend && alembic upgrade head`, then check:
-   - After starting the backend, the word list rows exist: `docker compose exec db mariadb ... -e "select count(*) from words"`. Restarting it adds nothing.
+   - After `make import`, the word list rows exist: `docker compose exec db mariadb ... -e "select count(*) from words"`. Running it again adds nothing.
    - `alembic check` reports no differences between the models and the migrations.
    - `alembic downgrade base` followed by `alembic upgrade head` succeeds, which proves the downgrades work.
    - `SHOW CREATE TABLE players` shows `utf8mb4` and `utf8mb4_uca1400_swedish_ai_ci`.
    - Registering `Åsa` with avatar 🦊 and reading it back via `/api/me` returns both unchanged. Registering `Asa` afterwards succeeds, while `åsa` gives 409.
    - `grep -r "app.models\|from app" backend/migrations/versions` finds nothing.
-2. Run `cd backend && uvicorn app.main:app --reload`, then `curl localhost:8000/api/words/random`. It should return Swedish JSON.
+2. Run `cd backend && python -m app.seed && uvicorn app.main:app --reload`, then `curl localhost:8000/api/words/random`. It should return Swedish JSON.
 3. Run `pytest` in backend:
    - **Words:** filtering by multiple `category_id`s (the result is always within them), omitting the param, and the 404 case.
    - **Auth:** register, a duplicate (case-insensitive) gives 409, login with the right and wrong password, and `/api/me` with and without a token.
