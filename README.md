@@ -23,6 +23,15 @@ The camera (QR scanning) needs HTTPS, so `TLS_MODE=internal` (Caddy's own CA) is
 - `PROTOCOL=http`: plain HTTP on `http://<SITE_ADDRESS>:<HTTP_PORT>`, with no certificate and `TLS_MODE` ignored. Phones only allow the camera over HTTPS, so QR scanning won't work unless another reverse proxy in front adds HTTPS.
 - `TLS_MODE=acme` (Let's Encrypt, for a public domain) needs ports 80 and 443 reachable from the internet.
 
+### Installing on a phone
+
+The game is a PWA, so players can add it to the home screen and it opens full screen like an app:
+
+- Android (Chrome): menu ⋮ → Installera app.
+- iPhone (Safari): Dela → Lägg till på hemskärmen.
+
+This needs HTTPS (`PROTOCOL=https`, or HTTPS in front, such as a Cloudflare tunnel). Over plain `PROTOCOL=http` on the LAN the browser won't install it. The app starts without a connection, but starting a round needs the server. A new version is offered on the setup screen ("Ny version finns · Uppdatera") and never reloads a game in progress.
+
 ### Raspberry Pi
 
 Use a 64-bit OS (Raspberry Pi OS 64-bit) on a Pi 3B+, 4 or 5. All images are multi-arch (`linux/arm64`) and are built on the Pi itself. The frontend build is the slowest step; on a 1 GB Pi 3B+ it may need swap. `SITE_ADDRESS=<hostname>.local` uses the Pi's mDNS name, so it keeps working if the IP changes.

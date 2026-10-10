@@ -44,6 +44,8 @@ frontend/
   src/styles/tokens.css     # copied from design/preview.html :root
   src/components/ui/        # Button, Card, Chip, Avatar, PlayerRow, ScoreRow, Badge, Toast, BottomSheet, Screen
   src/api.ts                # all fetch calls, attaches the Bearer token when logged in
+  src/pwa.ts                # registers the service worker (vite-plugin-pwa); a new version is applied only from Setup
+  public/icon.svg           # app icon source; `npm run icons` generates the PNGs/favicon next to it (committed)
   src/auth.ts               # token in localStorage, useAuth() hook
   src/App.tsx               # view switch (game/account) + game phase state machine
   src/components/Setup.tsx      # guests by name + registered players by QR, categories, "Regler" button, start button

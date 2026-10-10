@@ -24,4 +24,7 @@ React + Vite + TypeScript, plain CSS. The visual source of truth is now `src/sty
 
 ## Code
 - Phases are component state in `App.tsx` (no router). All fetch calls are in `src/api.ts`; the auth token is in `src/auth.ts`.
+- PWA via `vite-plugin-pwa` (config in `vite.config.ts`, registration in `src/pwa.ts`). A new version is applied only from Setup
+  ("Uppdatera"), never automatically: a reload mid-game would wipe the game. `/api` is never cached by the service worker.
+  Icons: edit `public/icon.svg`, then `npm run icons`. The service worker only exists in builds, not in `npm run dev`.
 - Dev: `npm run dev` (HTTPS via basic-ssl, `--host`, `/api` proxied to `localhost:8000`). Checks: `npm test`, `npm run lint`, `npm run build`.

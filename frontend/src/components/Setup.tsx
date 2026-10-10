@@ -9,6 +9,8 @@ import { Input } from './ui/Input'
 import { CategoryPicker } from './CategoryPicker'
 import { Rules } from './Rules'
 import { QrScanner } from './QrScanner'
+import { Toast } from './ui/Toast'
+import { applyUpdate, useUpdateAvailable } from '../pwa'
 
 let nextId = 1
 export const newEntry = (): Entry => ({ id: nextId++, name: '' })
@@ -65,6 +67,8 @@ export function Setup(p: Props) {
     return true
   }
 
+  const updateAvailable = useUpdateAvailable()
+
   return (
     <Screen
       right={
@@ -82,6 +86,13 @@ export function Setup(p: Props) {
         </>
       }
     >
+      {updateAvailable && (
+        <div className="toast-area">
+          <Toast variant="warn">
+            Ny version finns · <LinkButton onClick={applyUpdate}>Uppdatera</LinkButton>
+          </Toast>
+        </div>
+      )}
       <Card title="Spelare" aside={<span className="count">{entries.length} st</span>}>
         <div className="stack">
           {entries.map((e, i) => (

@@ -71,7 +71,9 @@ export function App() {
       setError(
         err instanceof ApiError && err.status === 404
           ? 'Det finns inga ord i de kategorierna.'
-          : 'Kunde inte hämta ett ord. Försök igen.',
+          : err instanceof ApiError && err.status === 0
+            ? 'Ingen anslutning. Kontrollera internet och försök igen.'
+            : 'Kunde inte hämta ett ord. Försök igen.',
       )
       return false
     } finally {

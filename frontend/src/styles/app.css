@@ -24,7 +24,8 @@ input { font-family: inherit; }
 .app.danger { background: radial-gradient(120% 60% at 50% 30%, var(--bg-danger) 0%, var(--bg) 70%); }
 .app.win { background: radial-gradient(120% 60% at 50% 25%, var(--bg-win) 0%, var(--bg) 70%); }
 
-.topbar { display: flex; justify-content: space-between; align-items: center; padding: 22px 20px 8px; flex: none; }
+/* Safe-area insets keep content clear of the notch and home bar when installed (viewport-fit=cover). */
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: calc(22px + env(safe-area-inset-top)) 20px 8px; flex: none; }
 .topbar-actions { display: flex; align-items: center; gap: 8px; }
 .logo { font-family: var(--font-display); font-weight: 800; font-size: 20px; letter-spacing: -.02em; }
 .logo span { color: var(--accent); }
@@ -34,7 +35,7 @@ input { font-family: inherit; }
 .screen.center { text-align: center; align-items: center; }
 .screen.center > :first-child { margin-top: auto; }
 .screen.center > :last-child { margin-bottom: auto; }
-.footer { padding: 12px 20px 24px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; flex: none; }
+.footer { padding: 12px 20px calc(24px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; flex: none; }
 
 /* ---------- Typography helpers ---------- */
 .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 600; }
@@ -198,7 +199,7 @@ button.player { cursor: pointer; }
 .scanner-inner { position: relative; width: 100%; max-width: 420px; display: flex; flex-direction: column; overflow: hidden; background: radial-gradient(80% 50% at 30% 40%, var(--camera-hi), var(--camera-lo) 70%), var(--camera-lo); }
 .scanner video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .camera-shade { position: absolute; inset: 0; background: var(--camera-shade); }
-.scan-ui { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; align-items: center; padding: 22px 20px 24px; gap: 18px; min-height: 0; }
+.scan-ui { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; align-items: center; padding: calc(22px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom)); gap: 18px; min-height: 0; }
 .scan-head { width: 100%; display: flex; justify-content: space-between; align-items: center; }
 .close { width: 36px; height: 36px; border-radius: 50%; background: var(--hairline-strong); border: 0; display: grid; place-items: center; font-size: 18px; }
 .viewfinder { position: relative; width: 240px; height: 240px; margin-top: 40px; border-radius: 24px; flex: none; }
@@ -216,7 +217,7 @@ button.player { cursor: pointer; }
 
 /* ---------- Bottom sheet ---------- */
 .scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 20; animation: fade .2s ease-out; }
-.bsheet { position: fixed; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 420px; z-index: 21; background: var(--surface); border-radius: 28px 28px 0 0; padding: 10px 20px 24px; display: grid; gap: 14px; box-shadow: var(--shadow-sheet); max-height: 92dvh; overflow-y: auto; animation: slide-up .25s ease-out; }
+.bsheet { position: fixed; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 420px; z-index: 21; background: var(--surface); border-radius: 28px 28px 0 0; padding: 10px 20px calc(24px + env(safe-area-inset-bottom)); display: grid; gap: 14px; box-shadow: var(--shadow-sheet); max-height: 92dvh; overflow-y: auto; animation: slide-up .25s ease-out; }
 .bsheet .grip { width: 40px; height: 5px; border-radius: 5px; background: var(--border); justify-self: center; }
 @keyframes slide-up { from { transform: translateY(100%); } to { transform: none; } }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- The "I." of the "Impostor." logo. Colours mirror the bg, text and accent tokens in tokens.css. -->
+  <rect width="512" height="512" fill="#14122B"/>
+  <rect x="186" y="126" width="84" height="260" rx="10" fill="#F4F1FF"/>
+  <circle cx="320" cy="344" r="42" fill="#FFB547"/>
+</svg>
