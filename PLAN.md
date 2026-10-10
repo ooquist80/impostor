@@ -153,7 +153,7 @@ Games:
    - **Players** is one list that holds two kinds of entry:
      - **Guest:** an editable name field.
      - **Registered:** a non-editable row showing the avatar and name, with a remove button. It remembers the account id.
-   - The list starts with 3 empty guest fields. "Lägg till spelare" adds a guest field. A guest field shows the avatar seeded with the typed name inside it, on the left (an empty dashed circle while the field is empty). **"Skanna QR"** opens the camera modal.
+   - The list starts with 3 empty guest fields. "Lägg till spelare" adds a guest field. A guest field shows the avatar seeded with the name inside it, on the left (an empty dashed circle while there is no name). It is drawn when the name is done, i.e. when the field loses focus or Enter is pressed, not while typing. **"Skanna QR"** opens the camera modal.
    - A successful scan **fills the first empty guest field** if there is one, otherwise it adds a new row. A short toast confirms it: "Anna tillagd".
    - Scanning a registered player who is already in the list shows "Redan med". An expired or invalid token shows "QR-koden har gått ut, be spelaren visa en ny". The camera stays open, so several players can be scanned in a row.
    - **Logged in on the game device:** the logged-in player is added automatically, once per login, like a scan (the app issues a join token and redeems it right away). A registered row can always be removed; at the 3-entry minimum it turns back into an empty guest field. While the logged-in player is not in the list, a **"+ Lägg till {namn}"** button adds them back.

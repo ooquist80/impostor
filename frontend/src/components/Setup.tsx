@@ -42,6 +42,8 @@ export function Setup(p: Props) {
   const [scanning, setScanning] = useState(false)
   const [addingMe, setAddingMe] = useState(false)
   const [addMeError, setAddMeError] = useState<string | null>(null)
+  // The guest field being typed in, with its name when typing started. Its avatar only changes once the name is done.
+  const [typing, setTyping] = useState<{ id: number; name: string } | null>(null)
 
   const entriesRef = useRef(entries)
   useEffect(() => {
@@ -128,8 +130,11 @@ export function Setup(p: Props) {
                 </div>
               ) : (
                 <div className="guest-field">
-                  {/* A guest's avatar is seeded with their name, so it follows what is typed. */}
-                  {e.name.trim() ? <Avatar name={e.name} size={32} /> : <span className="avatar-slot" />}
+                  {/* A guest's avatar is seeded with their name: drawn once the name is done (the field loses focus). */}
+                  {(() => {
+                    const shown = typing?.id === e.id ? typing.name : e.name
+                    return shown.trim() ? <Avatar name={shown} size={32} /> : <span className="avatar-slot" />
+                  })()}
                   <Input
                     value={e.name}
                     placeholder={`Spelare ${i + 1}`}
@@ -137,6 +142,10 @@ export function Setup(p: Props) {
                     autoComplete="off"
                     aria-label={`Spelare ${i + 1}`}
                     onChange={(ev) => rename(e.id, ev.target.value)}
+                    onFocus={() => setTyping({ id: e.id, name: e.name })}
+                    onBlur={() => setTyping(null)}
+                    // Enter (or "Klar" on a phone keyboard) finishes the name.
+                    onKeyDown={(ev) => ev.key === 'Enter' && ev.currentTarget.blur()}
                   />
                 </div>
               )}
