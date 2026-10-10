@@ -20,25 +20,27 @@ export function Play({ players, scores, starter, roundNumber, onVote }: Props) {
   return (
     <Screen
       right={<RoundTag>Runda {roundNumber}</RoundTag>}
-      center
       footer={<Button variant="danger" onClick={onVote}>Avslöja bedragaren</Button>}
     >
-      <Avatar name={player.name} avatar={player.avatar} size={88} />
-      <div className="display d-l mt-8">
-        <span className="amber">{player.name}</span> börjar!
+      {/* Kept compact so the standings for at least 4 players fit without scrolling. */}
+      <div className="starter">
+        <Avatar name={player.name} avatar={player.avatar} size={56} />
+        <div className="display d-l">
+          <span className="amber">{player.name}</span> börjar!
+        </div>
       </div>
-      <Card className="mt-12" style={{ textAlign: 'left' }}>
-        <p className="muted small">
+      <Card className="compact-note">
+        <p className="muted">
           Lägg ner enheten. Säg ett ord var, i tur och ordning, som hör ihop med ordet. Diskutera sedan vem som är
           bedragaren. När de flesta vill rösta trycker ni på knappen.
         </p>
       </Card>
-      <div className="standings-block mt-12">
+      <div className="standings-block">
         <div className="tally-head">
           <span className="eyebrow">Ställning</span>
           <span className="hint">{roundNumber === 1 ? 'Inga poäng än' : `Efter runda ${roundNumber - 1}`}</span>
         </div>
-        <Standings rows={rankScores(players, scores)} />
+        <Standings rows={rankScores(players, scores)} compact />
       </div>
     </Screen>
   )

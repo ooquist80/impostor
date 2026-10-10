@@ -184,7 +184,17 @@ button.player { cursor: pointer; }
 .bar { height: 6px; border-radius: 6px; background: var(--surface-2); margin-top: 6px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--accent); border-radius: 6px; }
 .score .pts { font: 800 22px var(--font-display); }
-.standings-block { display: grid; gap: 8px; width: 100%; text-align: left; }
+.standings-block { display: grid; gap: 8px; width: 100%; }
+/* Round screen: compact so the standings for 4+ players fit without scrolling. */
+.starter { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 4px; text-align: left; }
+.compact-note { padding: 12px 14px; }
+.compact-note p { font-size: 13px; line-height: 1.4; }
+.stack.compact { gap: 6px; }
+.score.compact { grid-template-columns: 20px 32px 1fr auto; gap: 10px; padding: 8px 12px; }
+.score.compact .rank { font-size: 14px; }
+.score.compact .name { font-size: 15px; }
+.score.compact .bar { height: 4px; margin-top: 4px; }
+.score.compact .pts { font-size: 18px; }
 .score.lead { border: 2px solid var(--accent-a50); background: linear-gradient(160deg, var(--score-lead-from), var(--surface)); }
 .crown { font-size: 40px; }
 

@@ -292,7 +292,19 @@
   .tally .total { min-width: 28px; text-align: right; font: 800 18px var(--font-display); }
   .badge.zero { color: var(--muted); background: var(--surface-2); }
   .tally-head { width: 100%; display: flex; justify-content: space-between; padding: 0 12px; }
-  .standings-block { display: grid; gap: 8px; width: 100%; text-align: left; margin-top: 12px; }
+  .standings-block { display: grid; gap: 8px; width: 100%; text-align: left; }
+  /* Play: compact so the standings for 4+ players fit without scrolling. */
+  .starter { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 4px; }
+  .starter .avatar { width: 56px; height: 56px; flex: none; }
+  .compact-note { padding: 12px 14px; }
+  .compact-note p { font-size: 13px; line-height: 1.4; }
+  .stack.compact { gap: 6px; }
+  .score.compact { grid-template-columns: 20px 32px 1fr auto; gap: 10px; padding: 8px 12px; }
+  .score.compact .avatar { width: 32px; height: 32px; }
+  .score.compact .rank { font-size: 14px; }
+  .score.compact .name { font-size: 15px; }
+  .score.compact .bar { height: 4px; margin-top: 4px; }
+  .score.compact .pts { font-size: 18px; }
   .done { width: 88px; height: 88px; border-radius: 50%; display: grid; place-items: center; font-size: 40px; color: var(--accent); background: rgba(255,181,71,.12); border: 2px solid rgba(255,181,71,.5); }
 
   @media (max-width: 420px) {
@@ -510,25 +522,24 @@
     <figure>
       <div class="phone">
         <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="round">Runda 2</div></div>
-        <div class="screen center" style="justify-content:flex-start">
-          <div class="avatar big av-anna" style="flex:none"></div>
-          <div class="display d-l" style="margin-top:8px"><span class="amber">Anna</span> börjar!</div>
-          <div class="card" style="text-align:left; margin-top:12px">
-            <p class="muted" style="font-size:14px">Lägg ner enheten. Säg ett ord var, i tur och ordning, som hör ihop med ordet. Diskutera sedan vem som är bedragaren. När de flesta vill rösta trycker ni på knappen.</p>
+        <div class="screen">
+          <div class="starter"><div class="avatar av-anna"></div><div class="display d-l"><span class="amber">Anna</span> börjar!</div></div>
+          <div class="card compact-note">
+            <p class="muted">Lägg ner enheten. Säg ett ord var, i tur och ordning, som hör ihop med ordet. Diskutera sedan vem som är bedragaren. När de flesta vill rösta trycker ni på knappen.</p>
           </div>
           <div class="standings-block">
             <div class="tally-head"><span class="eyebrow">Ställning</span><span class="hint">Efter runda 1</span></div>
-            <div class="stack">
-              <div class="card score lead"><span class="rank">1</span><div class="avatar av-sara"></div><div><div class="name">Sara</div><div class="bar"><i style="width:100%"></i></div></div><span class="pts amber">2</span></div>
-              <div class="card score"><span class="rank">2</span><div class="avatar av-anna"></div><div><div class="name">Anna</div><div class="bar"><i style="width:50%"></i></div></div><span class="pts">1</span></div>
-              <div class="card score"><span class="rank">2</span><div class="avatar av-erik"></div><div><div class="name">Erik</div><div class="bar"><i style="width:50%"></i></div></div><span class="pts">1</span></div>
-              <div class="card score"><span class="rank">2</span><div class="avatar av-johan"></div><div><div class="name">Johan</div><div class="bar"><i style="width:50%"></i></div></div><span class="pts">1</span></div>
+            <div class="stack compact">
+              <div class="card score compact lead"><span class="rank">1</span><div class="avatar av-sara"></div><div><div class="name">Sara</div><div class="bar"><i style="width:100%"></i></div></div><span class="pts amber">2</span></div>
+              <div class="card score compact"><span class="rank">2</span><div class="avatar av-anna"></div><div><div class="name">Anna</div><div class="bar"><i style="width:50%"></i></div></div><span class="pts">1</span></div>
+              <div class="card score compact"><span class="rank">2</span><div class="avatar av-erik"></div><div><div class="name">Erik</div><div class="bar"><i style="width:50%"></i></div></div><span class="pts">1</span></div>
+              <div class="card score compact"><span class="rank">2</span><div class="avatar av-johan"></div><div><div class="name">Johan</div><div class="bar"><i style="width:50%"></i></div></div><span class="pts">1</span></div>
             </div>
           </div>
         </div>
         <div class="footer"><button class="btn btn-danger">Avslöja bedragaren</button></div>
       </div>
-      <figcaption>5 · Play: vem som börjar, instruktioner och ställningen hittills (skärmen scrollar)</figcaption>
+      <figcaption>5 · Play: vem som börjar, instruktioner och ställningen. Kompakt så att minst 4 spelare syns utan att scrolla</figcaption>
     </figure>
 
     <!-- 6a. Vote – pass -->
