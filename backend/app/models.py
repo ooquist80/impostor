@@ -54,8 +54,8 @@ class Player(Base):
     # Display name in games. Not unique.
     name: Mapped[str] = mapped_column(String(30))
     password_hash: Mapped[str] = mapped_column(String(255))
-    # DiceBear "Thumbs" options: {"seed": ...} plus the picks from the avatar editor
-    # (eyes, mouth, shapeColor, backgroundColor). Validated by schemas.Avatar.
+    # DiceBear "Clay" options: {"seed": ...} plus the picks from the avatar editor
+    # (body, eyes, mouth, top, pattern, bodyColor, backgroundColor). Validated by schemas.Avatar.
     avatar: Mapped[dict] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now()

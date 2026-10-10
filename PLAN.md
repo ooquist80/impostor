@@ -60,7 +60,7 @@ frontend/
   src/components/account/Login.tsx     # login / register tabs
   src/components/account/Profile.tsx   # name + email, "Ändra avatar", stats, "Visa min QR-kod"
   src/components/account/AvatarEditor.tsx # avatar editor in a BottomSheet: preview, Slumpa, eyes, mouth, colour, background
-  src/avatar.ts             # DiceBear "Thumbs" rendering (on the device), editor choices, guest seeds
+  src/avatar.ts             # DiceBear "Clay" rendering (on the device), editor choices, guest seeds
   src/components/account/MyQr.tsx      # full-screen QR, auto-refreshes before expiry
   src/game.ts               # pure logic: pickImpostor, pickStartingPlayer, validateSetup, tallyVotes, roundVerdict, scoreRound, gameSummary
   src/game.test.ts          # vitest for pure logic
@@ -80,7 +80,7 @@ The frontend has no router. Game phases are handled with component state, and a 
     - The `UNIQUE` index on `email` uses the case-insensitive collation, so it catches the race where two registrations pass the check at the same time. An `IntegrityError` on insert is also turned into 409.
   - `name` is the display name shown in games (trimmed, 2–30 characters). It is **not** unique: several accounts can be called "Anna". Within one game names must still differ (see Setup).
   - Migration `0002` replaced the old `username` column and wiped all existing accounts, games and stats.
-  - `avatar` holds DiceBear "Thumbs" options: `{seed, eyes?, mouth?, shapeColor?, backgroundColor?}`. A new player gets a random 16-hex seed and no picks; picks left unset are chosen from the seed. Validated by `schemas.Avatar` (eyes `variant1–9W10/12/14/16`, mouth `variant1–5`, colours `#RRGGBB`, unknown keys rejected). Migration `0003` replaced the old emoji + colour columns, seeding existing players from their id.
+  - `avatar` holds DiceBear "Clay" options: `{seed, body?, eyes?, mouth?, top?, pattern?, bodyColor?, backgroundColor?}`. A new player gets a random 16-hex seed and no picks; picks left unset are chosen from the seed. Validated by `schemas.Avatar` (the variant names of `@dicebear/styles` `clay.json`; `top` and `pattern` can also be `none`; colours `#RRGGBB`; unknown keys rejected). Migration `0003` replaced the old emoji + colour columns, seeding existing players from their id; `0004` (the switch from Thumbs to Clay) kept only the seed.
 - `games(id PK, finished_at, rounds INT)`.
 - `game_players(game_id FK, player_id FK, points INT, impostor_rounds INT, won BOOL, PK(game_id, player_id))`. There is one row per registered player in a saved game.
 
@@ -232,7 +232,7 @@ Scores for the game in progress live only in frontend state and are lost on page
 - `Button` (primary/secondary/danger/scan)
 - `Card`
 - `Chip`
-- `Avatar`: a DiceBear "Thumbs" image (`@dicebear/core` + `@dicebear/thumbs` 9.x, rendered on the device so it works offline; artwork CC0). Guests are seeded with their name on the dark `--surface-2` background with a palette body colour; registered players use their stored options.
+- `Avatar`: a DiceBear "Clay" image (`@dicebear/core` 10.x + `@dicebear/styles`, rendered on the device so it works offline; artwork CC0). Guests are seeded with their name on the dark `--surface-2` background with a palette body colour; registered players use their stored options. The editor offers body, eyes, mouth, top (or none), pattern (or none), body colour and background.
 - `PlayerRow`
 - `ScoreRow`
 - `Badge`

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Avatar as AvatarData } from '../../types'
-import { EYES, MOUTHS, backgroundColors, randomSeed, shapeColors } from '../../avatar'
+import { BODIES, EYES, MOUTHS, PATTERNS, TOPS, backgroundColors, bodyColors, randomSeed } from '../../avatar'
 import { Avatar } from '../ui/Avatar'
 import { Button, LinkButton } from '../ui/Button'
 
@@ -10,6 +10,17 @@ type Props = {
   onSave: (avatar: AvatarData) => Promise<void>
   onCancel: () => void
 }
+
+type Part = 'body' | 'eyes' | 'mouth' | 'top' | 'pattern'
+
+/** One row per part, previewed on the player's own avatar. */
+const PARTS: [Part, string, string[]][] = [
+  ['body', 'Kropp', BODIES],
+  ['eyes', 'Ögon', EYES],
+  ['mouth', 'Mun', MOUTHS],
+  ['top', 'Topp', TOPS],
+  ['pattern', 'Mönster', PATTERNS],
+]
 
 const same = (a?: string, b?: string) => !!a && !!b && a.toLowerCase() === b.toLowerCase()
 
@@ -38,31 +49,23 @@ export function AvatarEditor({ name, avatar, onSave, onCancel }: Props) {
         {/* A new seed and no picks: a whole new random avatar. */}
         <LinkButton onClick={() => setDraft({ seed: randomSeed() })}>🎲 Slumpa</LinkButton>
       </div>
-      <div className="picker">
-        <div className="eyebrow">Ögon</div>
-        <div className="picker-row">
-          {EYES.map((eyes, i) => (
-            <button key={eyes} type="button" className={draft.eyes === eyes ? 'on' : ''} aria-label={`Ögon ${i + 1}`} onClick={() => set({ eyes })}>
-              <Avatar name={name} avatar={{ ...draft, eyes }} size={40} />
-            </button>
-          ))}
+      {PARTS.map(([part, label, choices]) => (
+        <div key={part} className="picker">
+          <div className="eyebrow">{label}</div>
+          <div className="picker-row">
+            {choices.map((v, i) => (
+              <button key={v} type="button" className={draft[part] === v ? 'on' : ''} aria-label={v === 'none' ? `${label}: ingen` : `${label} ${i + 1}`} onClick={() => set({ [part]: v })}>
+                <Avatar name={name} avatar={{ ...draft, [part]: v }} size={40} />
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-      <div className="picker">
-        <div className="eyebrow">Mun</div>
-        <div className="picker-row">
-          {MOUTHS.map((mouth, i) => (
-            <button key={mouth} type="button" className={draft.mouth === mouth ? 'on' : ''} aria-label={`Mun ${i + 1}`} onClick={() => set({ mouth })}>
-              <Avatar name={name} avatar={{ ...draft, mouth }} size={40} />
-            </button>
-          ))}
-        </div>
-      </div>
+      ))}
       <div className="picker">
         <div className="eyebrow">Färg</div>
         <div className="color-row">
-          {shapeColors().map((c, i) => (
-            <button key={c} type="button" className={same(c, draft.shapeColor) ? 'on' : ''} style={{ background: c }} aria-label={`Färg ${i + 1}`} onClick={() => set({ shapeColor: c })} />
+          {bodyColors().map((c, i) => (
+            <button key={c} type="button" className={same(c, draft.bodyColor) ? 'on' : ''} style={{ background: c }} aria-label={`Färg ${i + 1}`} onClick={() => set({ bodyColor: c })} />
           ))}
         </div>
       </div>

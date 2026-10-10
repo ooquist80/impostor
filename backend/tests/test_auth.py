@@ -75,7 +75,10 @@ def test_me_returns_player_email_and_zero_stats(client):
 
 def test_patch_me_updates_avatar(client):
     token = register(client)["token"]
-    avatar = {"seed": "abc", "eyes": "variant3W14", "mouth": "variant2", "shapeColor": "#3DDC97", "backgroundColor": "#2A2654"}
+    avatar = {
+        "seed": "abc", "body": "egg", "eyes": "googly", "mouth": "smileBig", "top": "antenna",
+        "pattern": "none", "bodyColor": "#3DDC97", "backgroundColor": "#2A2654",
+    }
     r = client.patch("/api/me", headers=auth_header(token), json={"avatar": avatar})
     assert r.status_code == 200
     assert r.json()["avatar"] == avatar
@@ -94,10 +97,11 @@ def test_patch_me_validation_and_auth(client):
         {},
         {"seed": ""},
         {"seed": "x" * 65},
-        {"seed": "a", "eyes": "variant10W14"},
-        {"seed": "a", "eyes": "variant3W11"},
-        {"seed": "a", "mouth": "variant6"},
-        {"seed": "a", "shapeColor": "red"},
+        {"seed": "a", "eyes": "variant3W14"},  # old Thumbs options
+        {"seed": "a", "body": "none"},  # only top and pattern can be left out
+        {"seed": "a", "mouth": "Smile"},
+        {"seed": "a", "top": "hat"},
+        {"seed": "a", "bodyColor": "red"},
         {"seed": "a", "backgroundColor": "#12345"},
         {"seed": "a", "hair": "long"},  # unknown options are rejected
     ]

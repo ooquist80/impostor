@@ -23,7 +23,7 @@ router = APIRouter(prefix="/api", tags=["auth"])
 
 
 def new_avatar() -> dict:
-    """A random seed and no picks: the app draws a Thumbs avatar from the seed."""
+    """A random seed and no picks: the app draws a Clay avatar from the seed."""
     return {"seed": secrets.token_hex(8)}
 
 

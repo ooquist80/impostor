@@ -1,5 +1,14 @@
-/** DiceBear "Thumbs" options. Unset picks are chosen from the seed. Colours are "#RRGGBB". */
-export type Avatar = { seed: string; eyes?: string; mouth?: string; shapeColor?: string; backgroundColor?: string }
+/** DiceBear "Clay" options. Unset picks are chosen from the seed. top/pattern can be "none". Colours are "#RRGGBB". */
+export type Avatar = {
+  seed: string
+  body?: string
+  eyes?: string
+  mouth?: string
+  top?: string
+  pattern?: string
+  bodyColor?: string
+  backgroundColor?: string
+}
 
 export type Player = {
   name: string

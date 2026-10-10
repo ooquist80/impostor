@@ -27,7 +27,8 @@ React + Vite + TypeScript, plain CSS. The visual source of truth is now `src/sty
 - PWA via `vite-plugin-pwa` (config in `vite.config.ts`, registration in `src/pwa.ts`). A new version is applied only from Setup
   ("Uppdatera"), never automatically: a reload mid-game would wipe the game. `/api` is never cached by the service worker.
   Icons: edit `public/icon.svg`, then `npm run icons`.
-- Avatars are DiceBear "Thumbs", rendered on the device in `src/avatar.ts` (never the DiceBear HTTP API). Colours come from
-  the tokens at runtime (`--avatar-1..5`, `--surface-2`). Guests are seeded with their name; keep `@dicebear/core` and
-  `@dicebear/thumbs` on the same major version. The service worker only exists in builds, not in `npm run dev`.
+- Avatars are DiceBear "Clay" (`@dicebear/core` 10 + `@dicebear/styles/clay.json`), rendered on the device in `src/avatar.ts`
+  (never the DiceBear HTTP API). Colours come from the tokens at runtime (`--avatar-1..5`, `--surface-2`). Guests are seeded
+  with their name. The editor's choices come from `clay.json`; the backend's `schemas.Avatar` lists the same variant names, so
+  update both when upgrading `@dicebear/styles`. The service worker only exists in builds, not in `npm run dev`.
 - Dev: `npm run dev` (HTTPS via basic-ssl, `--host`, `/api` proxied to `localhost:8000`). Checks: `npm test`, `npm run lint`, `npm run build`.
