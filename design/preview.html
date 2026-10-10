@@ -105,6 +105,10 @@
   }
   .input.placeholder { color: #6E68A0; }
   .input.focus { border-color: var(--accent); }
+  /* Guest name field: the avatar seeded with the name, or an empty slot, lined up with .reg-row. */
+  .input.guest { gap: 10px; padding-left: 4px; }
+  .input.guest .avatar { width: 32px; height: 32px; flex: none; }
+  .avatar-slot { width: 32px; height: 32px; flex: none; border-radius: 50%; border: 1.5px dashed var(--border); }
   .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: 0; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; }
   .add { margin-top: 4px; min-height: 44px; font-size: 14px; border-style: dashed; }
 
@@ -204,7 +208,8 @@
   .color-row i.dark { background: #2A2654; border: 1.5px solid var(--border); }
 
   /* ---------- Accounts & QR ---------- */
-  .profile-btn { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--surface-2); display: grid; place-items: center; font-size: 16px; }
+  .profile-btn { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--surface-2); display: grid; place-items: center; font-size: 16px; overflow: hidden; }
+  .profile-btn .avatar { width: 100%; height: 100%; }
   .back { font-size: 14px; font-weight: 600; color: var(--muted); }
 
   .reg-row { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 6px 0 4px; border-radius: 12px; background: var(--surface-2); border: 1.5px solid rgba(61,220,151,.35); }
@@ -348,15 +353,15 @@
     <!-- 1. Setup -->
     <figure>
       <div class="phone">
-        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="topbar-actions"><span class="rules-btn">Regler</span><div class="profile-btn">👤</div></div></div>
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="topbar-actions"><span class="rules-btn">Regler</span><div class="profile-btn"><div class="avatar av-sara"></div></div></div></div>
         <div class="screen">
           <div class="card">
             <div class="card-title">Spelare <span class="muted" style="font:500 13px var(--font-body)">4 st</span></div>
             <div class="stack">
               <div class="input-row"><div class="reg-row" style="flex:1"><div class="avatar av-sara"></div><span class="name">Sara</span><span class="tag" style="margin-left:auto">✓ Konto</span></div><button class="icon-btn">×</button></div>
-              <div class="input-row"><div class="input">Anna</div><button class="icon-btn">×</button></div>
-              <div class="input-row"><div class="input focus">Erik</div><button class="icon-btn">×</button></div>
-              <div class="input-row"><div class="input placeholder">Spelare 4</div><button class="icon-btn">×</button></div>
+              <div class="input-row"><div class="input guest"><div class="avatar av-anna"></div>Anna</div><button class="icon-btn">×</button></div>
+              <div class="input-row"><div class="input guest focus"><div class="avatar av-erik"></div>Erik</div><button class="icon-btn">×</button></div>
+              <div class="input-row"><div class="input guest placeholder"><span class="avatar-slot"></span>Spelare 4</div><button class="icon-btn">×</button></div>
               <div class="add-grid">
                 <button class="btn btn-secondary add" style="margin:0">+ Lägg till</button>
                 <button class="btn btn-scan">▣ Skanna QR</button>
@@ -376,13 +381,13 @@
           <p class="hint">Fyll i namn för alla spelare</p>
         </div>
       </div>
-      <figcaption>1 · Setup: inloggad spelare (Sara) tillagd automatiskt + gäster</figcaption>
+      <figcaption>1 · Setup: inloggad spelare (Sara) tillagd automatiskt + gäster med avatar från namnet</figcaption>
     </figure>
 
     <!-- 1b. Setup – rules sheet -->
     <figure>
       <div class="phone">
-        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="topbar-actions"><span class="rules-btn">Regler</span><div class="profile-btn">👤</div></div></div>
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="topbar-actions"><span class="rules-btn">Regler</span><div class="profile-btn"><div class="avatar av-sara"></div></div></div></div>
         <div class="screen">
           <div class="card"><div class="card-title">Spelare <span class="muted" style="font:500 13px var(--font-body)">4 st</span></div></div>
         </div>
@@ -408,14 +413,14 @@
     <!-- 1c. Setup – logged-in player removed -->
     <figure>
       <div class="phone">
-        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="topbar-actions"><span class="rules-btn">Regler</span><div class="profile-btn">👤</div></div></div>
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="topbar-actions"><span class="rules-btn">Regler</span><div class="profile-btn"><div class="avatar av-sara"></div></div></div></div>
         <div class="screen">
           <div class="card">
             <div class="card-title">Spelare <span class="muted" style="font:500 13px var(--font-body)">3 st</span></div>
             <div class="stack">
-              <div class="input-row"><div class="input placeholder">Spelare 1</div><span style="width:36px; flex:none"></span></div>
-              <div class="input-row"><div class="input">Anna</div><span style="width:36px; flex:none"></span></div>
-              <div class="input-row"><div class="input">Erik</div><span style="width:36px; flex:none"></span></div>
+              <div class="input-row"><div class="input guest placeholder"><span class="avatar-slot"></span>Spelare 1</div><span style="width:36px; flex:none"></span></div>
+              <div class="input-row"><div class="input guest"><div class="avatar av-anna"></div>Anna</div><span style="width:36px; flex:none"></span></div>
+              <div class="input-row"><div class="input guest"><div class="avatar av-erik"></div>Erik</div><span style="width:36px; flex:none"></span></div>
               <div class="add-grid">
                 <button class="btn btn-secondary add" style="margin:0">+ Lägg till</button>
                 <button class="btn btn-scan">▣ Skanna QR</button>

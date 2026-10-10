@@ -10,9 +10,13 @@ import { BottomSheet } from '../ui/BottomSheet'
 import { AvatarEditor } from './AvatarEditor'
 import { MyQr } from './MyQr'
 
-type Props = { onBack: () => void }
+type Props = {
+  onBack: () => void
+  /** Called with the player as loaded or saved here, so the game screens show the current avatar. */
+  onPlayer: (player: ApiPlayer) => void
+}
 
-export function Profile({ onBack }: Props) {
+export function Profile({ onBack, onPlayer }: Props) {
   const auth = useAuth()
   const [data, setData] = useState<{ player: ApiPlayer; email: string; stats: Stats } | null>(null)
   const [failed, setFailed] = useState(false)
@@ -20,11 +24,14 @@ export function Profile({ onBack }: Props) {
   const [showQr, setShowQr] = useState(false)
 
   const load = useCallback(() => {
-    getMe().then(setData, (err) => {
+    getMe().then((d) => {
+      setData(d)
+      onPlayer(d.player)
+    }, (err) => {
       // A 401 already cleared the token, which sends the user back to the login form.
       if (!(err instanceof ApiError && err.status === 401)) setFailed(true)
     })
-  }, [])
+  }, [onPlayer])
 
   useEffect(() => {
     load()
@@ -38,6 +45,7 @@ export function Profile({ onBack }: Props) {
   const saveAvatar = async (avatar: AvatarData) => {
     const player = await patchMe({ avatar })
     setData((d) => (d ? { ...d, player } : d))
+    onPlayer(player)
     setEditing(false)
   }
 

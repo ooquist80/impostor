@@ -83,11 +83,17 @@ input { font-family: inherit; }
 .icon-btn { width: 36px; height: 36px; flex: none; border-radius: 50%; border: 0; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; }
 .icon-spacer { width: 36px; flex: none; }
 .rules-btn { height: 36px; padding: 0 14px; border-radius: var(--radius-pill); border: 1.5px solid var(--border); background: var(--surface-2); color: var(--text); display: flex; align-items: center; font: 600 13px var(--font-body); }
-.profile-btn { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--surface-2); display: grid; place-items: center; font-size: 16px; }
+.profile-btn { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--surface-2); display: grid; place-items: center; font-size: 16px; padding: 0; overflow: hidden; }
+.profile-btn .avatar { width: 100%; height: 100%; }
 .back { font-size: 14px; font-weight: 600; color: var(--muted); background: none; border: 0; padding: 0; }
 
 /* ---------- Inputs ---------- */
 .input-row { display: flex; gap: 8px; align-items: center; }
+/* Guest name field with the avatar inside, lined up with the avatar in .reg-row. */
+.guest-field { position: relative; flex: 1; min-width: 0; }
+.guest-field > .avatar, .guest-field > .avatar-slot { position: absolute; left: 5.5px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.guest-field .input { padding-left: 47.5px; }
+.avatar-slot { width: 32px; height: 32px; border-radius: 50%; border: 1.5px dashed var(--border); }
 .input {
   flex: 1; min-width: 0; min-height: 44px; padding: 0 14px; border-radius: 12px;
   background: var(--surface-2); border: 1.5px solid transparent; color: var(--text);

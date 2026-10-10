@@ -95,7 +95,9 @@ export function Setup(p: Props) {
       right={
         <div className="topbar-actions">
           <button type="button" className="rules-btn" onClick={() => setRulesOpen(true)}>Regler</button>
-          <button type="button" className="profile-btn" aria-label="Konto" onClick={p.onOpenAccount}>👤</button>
+          <button type="button" className="profile-btn" aria-label="Konto" onClick={p.onOpenAccount}>
+            {p.loggedIn && me ? <Avatar name={me.name} avatar={me.avatar} size={36} /> : '👤'}
+          </button>
         </div>
       }
       footer={
@@ -125,14 +127,18 @@ export function Setup(p: Props) {
                   <span className="tag">✓ Konto</span>
                 </div>
               ) : (
-                <Input
-                  value={e.name}
-                  placeholder={`Spelare ${i + 1}`}
-                  maxLength={30}
-                  autoComplete="off"
-                  aria-label={`Spelare ${i + 1}`}
-                  onChange={(ev) => rename(e.id, ev.target.value)}
-                />
+                <div className="guest-field">
+                  {/* A guest's avatar is seeded with their name, so it follows what is typed. */}
+                  {e.name.trim() ? <Avatar name={e.name} size={32} /> : <span className="avatar-slot" />}
+                  <Input
+                    value={e.name}
+                    placeholder={`Spelare ${i + 1}`}
+                    maxLength={30}
+                    autoComplete="off"
+                    aria-label={`Spelare ${i + 1}`}
+                    onChange={(ev) => rename(e.id, ev.target.value)}
+                  />
+                </div>
               )}
               {canRemove || e.registered ? (
                 <IconButton aria-label={`Ta bort ${e.name || `spelare ${i + 1}`}`} onClick={() => remove(e.id)}>×</IconButton>

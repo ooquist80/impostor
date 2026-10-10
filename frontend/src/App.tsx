@@ -75,6 +75,19 @@ export function App() {
     return result
   }, [auth.token])
 
+  /** The profile loaded or saved the logged-in player: show their current avatar, also in the player list. */
+  const updateMe = useCallback(
+    (player: ApiPlayer) => {
+      const token = auth.token
+      if (!token) return
+      setMe({ token, player })
+      setEntries((prev) =>
+        prev.map((e) => (e.registered?.playerId === player.id ? { ...e, registered: { ...e.registered, avatar: player.avatar } } : e)),
+      )
+    },
+    [auth.token],
+  )
+
   // Add the logged-in player once per login. After that, removing them sticks until they add themselves again.
   const autoAddedFor = useRef<string | null>(null)
   useEffect(() => {
@@ -152,7 +165,7 @@ export function App() {
 
   if (view === 'account') {
     const back = () => setView('game')
-    return auth.isLoggedIn ? <Profile onBack={back} /> : <Login onBack={back} />
+    return auth.isLoggedIn ? <Profile onBack={back} onPlayer={updateMe} /> : <Login onBack={back} />
   }
 
   switch (phase) {
