@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ApiPlayer, Category, Entry } from '../types'
-import { addRegisteredEntry, validateSetup } from '../game'
+import { addRegisteredEntry, validateSetup, type AddResult } from '../game'
 import { Screen } from './ui/Screen'
 import { Card } from './ui/Card'
 import { Button, IconButton, LinkButton } from './ui/Button'
@@ -32,8 +32,8 @@ type Props = {
   loggedIn: boolean
   /** The player logged in on this device, once known (after the first add). */
   me: ApiPlayer | null
-  /** Adds the logged-in player to the list. Resolves false if the name is already taken. */
-  onAddMe: () => Promise<boolean>
+  /** Adds the logged-in player to the list. */
+  onAddMe: () => Promise<AddResult>
 }
 
 export function Setup(p: Props) {
@@ -60,24 +60,29 @@ export function Setup(p: Props) {
     )
   const add = () => setEntries((prev) => [...prev, newEntry()])
 
-  /** Called by the scanner. Returns false if the player is already in the list. */
-  const addRegistered = (player: ApiPlayer, participantToken: string): boolean => {
-    const next = addRegisteredEntry(entriesRef.current, player, participantToken, newEntry)
-    if (!next) return false
-    entriesRef.current = next
-    setEntries(() => next)
-    return true
+  /** Called by the scanner. */
+  const addRegistered = (player: ApiPlayer, participantToken: string): AddResult => {
+    const result = addRegisteredEntry(entriesRef.current, player, participantToken, newEntry)
+    if (result.ok) {
+      const next = result.entries
+      entriesRef.current = next
+      setEntries(() => next)
+    }
+    return result
   }
 
   const updateAvailable = useUpdateAvailable()
 
   const me = p.me
-  const meInList = !!me && entries.some((e) => e.registered && e.name.toLowerCase() === me.username.toLowerCase())
+  const meInList = !!me && entries.some((e) => e.registered?.playerId === me.id)
   const addMe = async () => {
     setAddingMe(true)
     setAddMeError(null)
     try {
-      if (!(await p.onAddMe())) setAddMeError('Du finns redan i listan')
+      const result = await p.onAddMe()
+      if (!result.ok) {
+        setAddMeError(result.reason === 'already' ? 'Du finns redan i listan' : 'Någon annan i listan har samma namn som du')
+      }
     } catch {
       setAddMeError('Kunde inte lägga till dig. Försök igen.')
     } finally {
@@ -142,7 +147,7 @@ export function Setup(p: Props) {
           </div>
           {p.loggedIn && !meInList && (
             <Button variant="secondary" small disabled={addingMe} onClick={addMe}>
-              {addingMe ? 'Lägger till…' : `+ Lägg till ${me ? me.username : 'mig'}`}
+              {addingMe ? 'Lägger till…' : `+ Lägg till ${me ? me.name : 'mig'}`}
             </Button>
           )}
           {addMeError && <p className="hint">{addMeError}</p>}

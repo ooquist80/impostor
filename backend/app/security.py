@@ -11,8 +11,8 @@ JOIN = "join"
 PARTICIPANT = "participant"
 
 _hasher = PasswordHash.recommended()
-# Verified against when the username is unknown, so login timing doesn't
-# reveal which usernames exist.
+# Verified against when the email is unknown, so login timing doesn't
+# reveal which emails are registered.
 _DUMMY_HASH = _hasher.hash("dummy-password")
 
 

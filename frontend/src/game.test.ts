@@ -109,22 +109,31 @@ describe('gameSummary', () => {
 })
 
 describe('addRegisteredEntry', () => {
-  const anna = { id: 1, username: 'Anna', avatar_emoji: '🦊', avatar_color: '#000000' }
+  const anna = { id: 1, name: 'Anna', avatar_emoji: '🦊', avatar_color: '#000000' }
   let id = 100
   const make = () => ({ id: id++, name: '' })
+  const names = (r: ReturnType<typeof addRegisteredEntry>) => (r.ok ? r.entries.map((e) => e.name) : r.reason)
 
   it('fills the first empty guest field', () => {
-    const next = addRegisteredEntry([{ id: 1, name: 'Erik' }, { id: 2, name: '' }, { id: 3, name: '' }], anna, 'pt', make)
-    expect(next?.map((e) => e.name)).toEqual(['Erik', 'Anna', ''])
-    expect(next?.[1].registered).toEqual({ participantToken: 'pt', avatar: { emoji: '🦊', color: '#000000' } })
+    const r = addRegisteredEntry([{ id: 1, name: 'Erik' }, { id: 2, name: '' }, { id: 3, name: '' }], anna, 'pt', make)
+    expect(names(r)).toEqual(['Erik', 'Anna', ''])
+    expect(r.ok && r.entries[1].registered).toEqual({ playerId: 1, participantToken: 'pt', avatar: { emoji: '🦊', color: '#000000' } })
   })
 
   it('appends a row when no field is empty', () => {
-    const next = addRegisteredEntry([{ id: 1, name: 'Erik' }], anna, 'pt', make)
-    expect(next?.map((e) => e.name)).toEqual(['Erik', 'Anna'])
+    expect(names(addRegisteredEntry([{ id: 1, name: 'Erik' }], anna, 'pt', make))).toEqual(['Erik', 'Anna'])
   })
 
-  it('returns null when the name is already in the list', () => {
-    expect(addRegisteredEntry([{ id: 1, name: ' anna ' }], anna, 'pt', make)).toBeNull()
+  it('reports the same account as already added', () => {
+    const r = addRegisteredEntry([{ id: 1, name: '' }, { id: 2, name: '' }], anna, 'pt', make)
+    const again = r.ok ? addRegisteredEntry(r.entries, anna, 'pt2', make) : r
+    expect(names(again)).toBe('already')
+  })
+
+  it('reports a different player with the same name', () => {
+    expect(names(addRegisteredEntry([{ id: 1, name: ' anna ' }], anna, 'pt', make))).toBe('nameTaken')
+    const otherAnna = { ...anna, id: 2 }
+    const r = addRegisteredEntry([{ id: 1, name: '' }], anna, 'pt', make)
+    expect(names(r.ok ? addRegisteredEntry(r.entries, otherAnna, 'pt', make) : r)).toBe('nameTaken')
   })
 })

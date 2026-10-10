@@ -72,19 +72,20 @@ The frontend has no router. Game phases are handled with component state, and a 
 ## Database schema
 - `categories(id PK, name VARCHAR UNIQUE)`, for example Djur, Mat, Platser, Yrken, Sport, Saker.
 - `words(id PK, word VARCHAR, clue VARCHAR, category_id FK)`. Example rows: `Elefant` with clue `Snabel`, and `Pizza` with clue `Italien`.
-- `players(id PK, username VARCHAR(30) UNIQUE, password_hash, avatar_emoji VARCHAR(8), avatar_color CHAR(7), created_at)`.
-  - Usernames are case-insensitive: they are stored as typed (trimmed). Uniqueness is enforced in two places:
-    - `register` checks for an existing `func.lower(username) == username.lower()` before inserting and returns 409. This also works on SQLite, so the tests cover it.
-    - The `UNIQUE` index on `username` uses the case-insensitive Swedish collation, so it catches the race where two registrations pass the check at the same time. An `IntegrityError` on insert is also turned into 409.
-    - "Åsa" and "Asa" are different names; "Åsa" and "åsa" are the same.
+- `players(id PK, email VARCHAR(254) UNIQUE, name VARCHAR(30), password_hash, avatar_emoji VARCHAR(8), avatar_color CHAR(7), created_at)`.
+  - `email` is the login. It must be a well-formed address (pydantic `EmailStr`, no confirmation mail) and is stored lower-cased. It is shown only on the player's own profile, never in games or on the game device. Uniqueness is enforced in two places:
+    - `register` checks for an existing `func.lower(email) == email.lower()` before inserting and returns 409. This also works on SQLite, so the tests cover it.
+    - The `UNIQUE` index on `email` uses the case-insensitive collation, so it catches the race where two registrations pass the check at the same time. An `IntegrityError` on insert is also turned into 409.
+  - `name` is the display name shown in games (trimmed, 2–30 characters). It is **not** unique: several accounts can be called "Anna". Within one game names must still differ (see Setup).
+  - Migration `0002` replaced the old `username` column and wiped all existing accounts, games and stats.
   - Defaults: a random colour from the design palette and the emoji 🙂.
 - `games(id PK, finished_at, rounds INT)`.
 - `game_players(game_id FK, player_id FK, points INT, impostor_rounds INT, won BOOL, PK(game_id, player_id))`. There is one row per registered player in a saved game.
 
 Stats are computed with an aggregate query over `game_players`, not stored as counters.
 
-**Character set.** Words and usernames contain å, ä and ö, and avatars are emoji (4-byte UTF-8), so everything is `utf8mb4`:
-- The `db` service starts MariaDB with `--character-set-server=utf8mb4 --collation-server=utf8mb4_uca1400_swedish_ai_ci`. The Swedish collation treats å, ä and ö as their own letters (so "Åsa" and "Asa" are different usernames) and sorts them last, as in Swedish.
+**Character set.** Words and player names contain å, ä and ö, and avatars are emoji (4-byte UTF-8), so everything is `utf8mb4`:
+- The `db` service starts MariaDB with `--character-set-server=utf8mb4 --collation-server=utf8mb4_uca1400_swedish_ai_ci`. The Swedish collation treats å, ä and ö as their own letters (so "Åsa" and "Asa" sort and compare as different names) and sorts them last, as in Swedish.
 - Every table in the migrations sets `mariadb_charset="utf8mb4"` and `mariadb_collate="utf8mb4_uca1400_swedish_ai_ci"`, so the schema doesn't depend on server defaults.
 - The DB URL that `config.py` builds ends in `?charset=utf8mb4`, so the connection itself doesn't mangle emoji.
 
@@ -113,12 +114,12 @@ Words:
   - It returns 404 if no word matches.
 
 Accounts. Auth uses `Authorization: Bearer <auth token>`, a JWT valid for 30 days.
-- `POST /api/auth/register` takes `{username, password}` and returns `{token, player}`.
-  - The username is 2–30 characters, and the password is at least 6.
-  - It returns 409 if the name is taken.
-- `POST /api/auth/login` takes `{username, password}` and returns `{token, player}`, or 401.
-- `GET /api/me` returns `{player, stats}`.
-  - `player` is `{id, username, avatar_emoji, avatar_color}`.
+- `POST /api/auth/register` takes `{email, name, password}` and returns `{token, player}`.
+  - The email must be valid, the name is 2–30 characters, and the password is at least 6 (422 otherwise).
+  - It returns 409 if the email is already registered (case-insensitive).
+- `POST /api/auth/login` takes `{email, password}` and returns `{token, player}`, or 401.
+- `GET /api/me` returns `{player, email, stats}`. This is the only response that contains the email.
+  - `player` is `{id, name, avatar_emoji, avatar_color}`, the same public shape everywhere (also from QR redeem).
   - `stats` is `{games, wins, total_points, impostor_rounds}`.
 - `PATCH /api/me` takes `{avatar_emoji?, avatar_color?}` and returns the updated `player`.
 
@@ -148,12 +149,13 @@ Games:
 1. **Setup** (first screen, shown on load):
    - **Players** is one list that holds two kinds of entry:
      - **Guest:** an editable name field.
-     - **Registered:** a non-editable row showing the avatar and username, with a remove button.
+     - **Registered:** a non-editable row showing the avatar and name, with a remove button. It remembers the account id.
    - The list starts with 3 empty guest fields. "Lägg till spelare" adds a guest field. **"Skanna QR"** opens the camera modal.
    - A successful scan **fills the first empty guest field** if there is one, otherwise it adds a new row. A short toast confirms it: "Anna tillagd".
    - Scanning a registered player who is already in the list shows "Redan med". An expired or invalid token shows "QR-koden har gått ut, be spelaren visa en ny". The camera stays open, so several players can be scanned in a row.
    - **Logged in on the game device:** the logged-in player is added automatically, once per login, like a scan (the app issues a join token and redeems it right away). A registered row can always be removed; at the 3-entry minimum it turns back into an empty guest field. While the logged-in player is not in the list, a **"+ Lägg till {namn}"** button adds them back.
-   - Remove buttons on guest fields are hidden when only 3 entries are left. Names (guest names and usernames) are trimmed and must be non-empty and unique, case-insensitively.
+   - Remove buttons on guest fields are hidden when only 3 entries are left. Names (guest names and account names) are trimmed and must be non-empty and unique within the game, case-insensitively.
+   - Scanning (or adding yourself) is matched on account id: the same account again shows "Redan med". A different player whose name is already in the list is refused with "Någon heter redan {namn}. Byt namn på gästen och skanna igen".
    - **Categories**: categories are fetched from `/api/categories` and shown as toggleable chips or checkboxes, so several can be selected. A "Välj alla" / "Avmarkera alla" toggle sits above them. All categories are selected by default.
    - **"Starta spelet"** (the Swedish label for "start game") is disabled until there are at least 3 valid, unique names and at least 1 category. A short hint explains what's missing.
    - **"Regler"**: a small button in the top bar, next to the profile button (not the footer's main action, which stays "Starta spelet"), opens the rules in a `BottomSheet`, rendered by `Rules.tsx`. It is plain text with short headings, scrolls if it is taller than the screen, and closes with "Stäng" or by tapping outside (see `BottomSheet`). Closing it leaves the setup (players, categories) untouched. The text is in Swedish, in the same informal "du" tone, and covers:

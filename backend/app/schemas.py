@@ -1,9 +1,9 @@
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints
 
-Username = Annotated[
+Name = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=2, max_length=30)
 ]
 Password = Annotated[str, Field(min_length=6, max_length=128)]
@@ -23,10 +23,11 @@ class WordOut(BaseModel):
     category: str
 
 
+# Public player data, also sent to the game device. Never includes the email.
 class PlayerOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
-    username: str
+    name: str
     avatar_emoji: str
     avatar_color: str
 
@@ -39,12 +40,13 @@ class Stats(BaseModel):
 
 
 class RegisterIn(BaseModel):
-    username: Username
+    email: EmailStr
+    name: Name
     password: Password
 
 
 class LoginIn(BaseModel):
-    username: Annotated[str, StringConstraints(strip_whitespace=True)]
+    email: Annotated[str, StringConstraints(strip_whitespace=True)]
     password: str
 
 
@@ -55,6 +57,8 @@ class AuthOut(BaseModel):
 
 class MeOut(BaseModel):
     player: PlayerOut
+    # Only the player's own profile shows the email.
+    email: str
     stats: Stats
 
 

@@ -13,7 +13,7 @@ export type WordResult = { word: string; clue: string; category: string }
 
 export type ApiPlayer = {
   id: number
-  username: string
+  name: string
   avatar_emoji: string
   avatar_color: string
 }
@@ -36,5 +36,5 @@ export type Votes = Record<string, string>
 export type Entry = {
   id: number
   name: string
-  registered?: { participantToken: string; avatar: Avatar }
+  registered?: { playerId: number; participantToken: string; avatar: Avatar }
 }

@@ -28,7 +28,8 @@ def test_issue_then_redeem_returns_right_player(client):
     assert red.status_code == 200
     out = red.json()
     assert out["player"]["id"] == reg["player"]["id"]
-    assert out["player"]["username"] == "Anna"
+    assert out["player"]["name"] == "Anna"
+    assert "email" not in out["player"]
     pclaims = jwt.decode(out["participant_token"], settings.secret_key, algorithms=["HS256"])
     assert pclaims["purpose"] == "participant"
     assert 23 * 3600 < pclaims["exp"] - time.time() <= 24 * 3600

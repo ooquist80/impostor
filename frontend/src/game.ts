@@ -34,22 +34,29 @@ export function validateSetup(names: string[], categoryCount: number): SetupChec
   return { valid: error === null, error, message: error ? MESSAGES[error] : '' }
 }
 
+export type AddResult = { ok: true; entries: Entry[] } | { ok: false; reason: 'already' | 'nameTaken' }
+
 /**
  * Adds a registered player to the setup list: fills the first empty guest field, otherwise appends a row.
- * Returns null if the name is already in the list (case-insensitive).
+ * Fails with 'already' if this account is in the list, or 'nameTaken' if someone else there has the same
+ * name (names are not unique between accounts, but must be within a game).
  */
 export function addRegisteredEntry(
   entries: Entry[],
   player: ApiPlayer,
   participantToken: string,
   makeEntry: () => Entry,
-): Entry[] | null {
-  if (entries.some((e) => e.name.trim().toLowerCase() === player.username.toLowerCase())) return null
-  const registered = { participantToken, avatar: { emoji: player.avatar_emoji, color: player.avatar_color } }
+): AddResult {
+  if (entries.some((e) => e.registered?.playerId === player.id)) return { ok: false, reason: 'already' }
+  if (entries.some((e) => e.name.trim().toLowerCase() === player.name.toLowerCase())) return { ok: false, reason: 'nameTaken' }
+  const registered = { playerId: player.id, participantToken, avatar: { emoji: player.avatar_emoji, color: player.avatar_color } }
   const empty = entries.find((e) => !e.registered && e.name.trim() === '')
-  return empty
-    ? entries.map((e) => (e.id === empty.id ? { ...e, name: player.username, registered } : e))
-    : [...entries, { ...makeEntry(), name: player.username, registered }]
+  return {
+    ok: true,
+    entries: empty
+      ? entries.map((e) => (e.id === empty.id ? { ...e, name: player.name, registered } : e))
+      : [...entries, { ...makeEntry(), name: player.name, registered }],
+  }
 }
 
 /** Votes each player got. The impostor's own vote is ignored. */

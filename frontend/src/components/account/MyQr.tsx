@@ -53,8 +53,8 @@ export function MyQr({ player, onBack }: { player: ApiPlayer; onBack: () => void
       center
       footer={<Button variant="secondary" onClick={onBack}>Stäng</Button>}
     >
-      <Avatar name={player.username} avatar={{ emoji: player.avatar_emoji, color: player.avatar_color }} size={56} />
-      <div className="display d-l" style={{ marginTop: -6 }}>{player.username}</div>
+      <Avatar name={player.name} avatar={{ emoji: player.avatar_emoji, color: player.avatar_color }} size={56} />
+      <div className="display d-l" style={{ marginTop: -6 }}>{player.name}</div>
       <div className={`qr-card ${token ? '' : 'loading'}`.trim()}>
         {token && <QRCodeSVG value={token} size={220} level="M" bgColor="transparent" fgColor="currentColor" />}
       </div>

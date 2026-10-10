@@ -63,9 +63,12 @@ def seeded(db):
     return ids
 
 
-def register(client, username="Anna", password="hemligt1"):
+def register(client, name="Anna", password="hemligt1", email=None):
+    """Registers a player. The email defaults to one derived from the name."""
+    email = email or f"{name.strip().lower()}@example.com"
     r = client.post(
-        "/api/auth/register", json={"username": username, "password": password}
+        "/api/auth/register",
+        json={"email": email, "name": name, "password": password},
     )
     assert r.status_code == 200, r.text
     return r.json()

@@ -48,8 +48,11 @@ class Player(Base):
     __table_args__ = TABLE_OPTIONS
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    # UNIQUE uses the table's case-insensitive Swedish collation.
-    username: Mapped[str] = mapped_column(String(30), unique=True)
+    # Login. Stored lower-cased; UNIQUE also uses the case-insensitive collation.
+    # Shown only on the player's own profile, never in games.
+    email: Mapped[str] = mapped_column(String(254), unique=True)
+    # Display name in games. Not unique.
+    name: Mapped[str] = mapped_column(String(30))
     password_hash: Mapped[str] = mapped_column(String(255))
     avatar_emoji: Mapped[str] = mapped_column(String(8), default="🙂")
     avatar_color: Mapped[str] = mapped_column(CHAR(7))

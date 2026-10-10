@@ -14,7 +14,7 @@ type Props = { onBack: () => void }
 
 export function Profile({ onBack }: Props) {
   const auth = useAuth()
-  const [data, setData] = useState<{ player: ApiPlayer; stats: Stats } | null>(null)
+  const [data, setData] = useState<{ player: ApiPlayer; email: string; stats: Stats } | null>(null)
   const [failed, setFailed] = useState(false)
   const [saveError, setSaveError] = useState(false)
   const [showQr, setShowQr] = useState(false)
@@ -76,8 +76,11 @@ export function Profile({ onBack }: Props) {
   return (
     <Screen left={back} right={logout} footer={<Button onClick={() => setShowQr(true)}>▣ Visa min QR-kod</Button>}>
       <div className="profile-head">
-        <Avatar name={player.username} avatar={avatar} size={72} />
-        <div className="display d-l">{player.username}</div>
+        <Avatar name={player.name} avatar={avatar} size={72} />
+        <div>
+          <div className="display d-l">{player.name}</div>
+          <p className="muted small">{data.email}</p>
+        </div>
       </div>
       <Card title="Avatar">
         <div className="emoji-row">

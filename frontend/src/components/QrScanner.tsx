@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import QrScannerLib from 'qr-scanner'
 import { ApiError, redeemJoinToken } from '../api'
 import type { ApiPlayer } from '../types'
+import type { AddResult } from '../game'
 import { Avatar } from './ui/Avatar'
 import { Button } from './ui/Button'
 import { Toast } from './ui/Toast'
 
 type Props = {
   /** Returns false if the player is already in the list. */
-  onAdd: (player: ApiPlayer, participantToken: string) => boolean
+  onAdd: (player: ApiPlayer, participantToken: string) => AddResult
   onClose: () => void
 }
 
@@ -56,11 +57,14 @@ export function QrScanner({ onAdd, onClose }: Props) {
       try {
         const res = await redeemJoinToken(token)
         redeemed.set(token, res.player)
-        if (onAddRef.current(res.player, res.participant_token)) {
+        const result = onAddRef.current(res.player, res.participant_token)
+        if (result.ok) {
           setAdded((n) => n + 1)
-          show({ variant: 'ok', text: `${res.player.username} tillagd`, player: res.player })
-        } else {
+          show({ variant: 'ok', text: `${res.player.name} tillagd`, player: res.player })
+        } else if (result.reason === 'already') {
           show({ variant: 'warn', text: 'Redan med' })
+        } else {
+          show({ variant: 'warn', text: `Någon heter redan ${res.player.name}. Byt namn på gästen och skanna igen` })
         }
       } catch (err) {
         if (err instanceof ApiError && err.status === 400) {
@@ -129,7 +133,7 @@ export function QrScanner({ onAdd, onClose }: Props) {
                   avatar={
                     toast.player && (
                       <Avatar
-                        name={toast.player.username}
+                        name={toast.player.name}
                         avatar={{ emoji: toast.player.avatar_emoji, color: toast.player.avatar_color }}
                         size={28}
                       />

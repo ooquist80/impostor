@@ -27,14 +27,14 @@ DEFAULT_EMOJI = "🙂"
 
 @router.post("/auth/register", response_model=AuthOut)
 def register(body: RegisterIn, db: Session = Depends(get_db)):
-    taken = HTTPException(409, "Username is taken")
-    existing = db.scalar(
-        select(Player.id).where(func.lower(Player.username) == body.username.lower())
-    )
+    taken = HTTPException(409, "Email is already registered")
+    email = body.email.lower()
+    existing = db.scalar(select(Player.id).where(func.lower(Player.email) == email))
     if existing is not None:
         raise taken
     player = Player(
-        username=body.username,
+        email=email,
+        name=body.name,
         password_hash=security.hash_password(body.password),
         avatar_emoji=DEFAULT_EMOJI,
         avatar_color=random.choice(AVATAR_COLORS),
@@ -43,7 +43,7 @@ def register(body: RegisterIn, db: Session = Depends(get_db)):
     try:
         db.commit()
     except IntegrityError:
-        # Lost a race with a concurrent registration of the same name.
+        # Lost a race with a concurrent registration of the same email.
         db.rollback()
         raise taken
     return AuthOut(token=security.create_auth_token(player.id), player=player)
@@ -52,13 +52,13 @@ def register(body: RegisterIn, db: Session = Depends(get_db)):
 @router.post("/auth/login", response_model=AuthOut)
 def login(body: LoginIn, db: Session = Depends(get_db)):
     player = db.scalar(
-        select(Player).where(func.lower(Player.username) == body.username.lower())
+        select(Player).where(func.lower(Player.email) == body.email.lower())
     )
     ok = security.verify_password(
         body.password, player.password_hash if player else None
     )
     if player is None or not ok:
-        raise HTTPException(401, "Wrong username or password")
+        raise HTTPException(401, "Wrong email or password")
     return AuthOut(token=security.create_auth_token(player.id), player=player)
 
 
@@ -81,7 +81,7 @@ def _stats(db: Session, player_id: int) -> Stats:
 
 @router.get("/me", response_model=MeOut)
 def me(player: Player = Depends(get_current_player), db: Session = Depends(get_db)):
-    return MeOut(player=player, stats=_stats(db, player.id))
+    return MeOut(player=player, email=player.email, stats=_stats(db, player.id))
 
 
 @router.patch("/me", response_model=PlayerOut)

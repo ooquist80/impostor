@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError, createJoinToken, getCategories, getRandomWord, redeemJoinToken } from './api'
 import { useAuth } from './auth'
-import { addRegisteredEntry, pickImpostor, pickStartingPlayer, scoreRound } from './game'
+import { addRegisteredEntry, pickImpostor, pickStartingPlayer, scoreRound, type AddResult } from './game'
 import type { ApiPlayer, Category, Entry, Player, Round, Votes } from './types'
 import { Setup, newEntry } from './components/Setup'
 import { Reveal } from './components/Reveal'
@@ -61,17 +61,18 @@ export function App() {
   const myself = me && me.token === auth.token ? me.player : null
 
   /** Adds the logged-in player like a QR scan would: issue a join token and redeem it right away. */
-  const addMe = useCallback(async (): Promise<boolean> => {
+  const addMe = useCallback(async (): Promise<AddResult> => {
     const token = auth.token
-    if (!token) return false
+    if (!token) return { ok: false, reason: 'already' }
     const { token: joinToken } = await createJoinToken()
     const { player, participant_token } = await redeemJoinToken(joinToken)
     setMe({ token, player })
-    const next = addRegisteredEntry(entriesRef.current, player, participant_token, newEntry)
-    if (!next) return false
-    entriesRef.current = next
-    setEntries(next)
-    return true
+    const result = addRegisteredEntry(entriesRef.current, player, participant_token, newEntry)
+    if (result.ok) {
+      entriesRef.current = result.entries
+      setEntries(result.entries)
+    }
+    return result
   }, [auth.token])
 
   // Add the logged-in player once per login. After that, removing them sticks until they add themselves again.

@@ -29,8 +29,9 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     } catch {
       /* no JSON body */
     }
-    // A rejected token on an authenticated call means the login is stale.
-    if (res.status === 401 && token && path.startsWith('/api/me')) clearToken()
+    // A rejected token on an authenticated call means the login is stale (e.g. the account was deleted).
+    // Login/register answer 401 for a wrong password instead, which says nothing about the stored token.
+    if (res.status === 401 && token && !path.startsWith('/api/auth/')) clearToken()
     throw new ApiError(res.status, detail || `HTTP ${res.status}`)
   }
   return (res.status === 204 ? undefined : await res.json()) as T
@@ -45,13 +46,14 @@ export function getRandomWord(categoryIds: number[]) {
 
 export type AuthResult = { token: string; player: ApiPlayer }
 
-export const register = (username: string, password: string) =>
-  request<AuthResult>('POST', '/api/auth/register', { username, password })
+export const register = (email: string, name: string, password: string) =>
+  request<AuthResult>('POST', '/api/auth/register', { email, name, password })
 
-export const login = (username: string, password: string) =>
-  request<AuthResult>('POST', '/api/auth/login', { username, password })
+export const login = (email: string, password: string) =>
+  request<AuthResult>('POST', '/api/auth/login', { email, password })
 
-export const getMe = () => request<{ player: ApiPlayer; stats: Stats }>('GET', '/api/me')
+/** The email is only returned here, for the player's own profile. */
+export const getMe = () => request<{ player: ApiPlayer; email: string; stats: Stats }>('GET', '/api/me')
 
 export const patchMe = (changes: { avatar_emoji?: string; avatar_color?: string }) =>
   request<ApiPlayer>('PATCH', '/api/me', changes)
