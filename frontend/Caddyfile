@@ -1,0 +1,30 @@
+# TLS_MODE=internal -> Caddy's own CA (LAN), TLS_MODE=acme -> Let's Encrypt (public domain).
+
+{
+	# Browsers send no SNI when SITE_ADDRESS is an IP, and behind Docker's NAT
+	# Caddy can't match the certificate by the local address either.
+	default_sni {$SITE_ADDRESS}
+}
+
+(tls_internal) {
+	tls internal
+}
+
+(tls_acme) {
+}
+
+{$SITE_ADDRESS} {
+	import tls_{$TLS_MODE}
+
+	encode gzip zstd
+
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

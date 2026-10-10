@@ -1,0 +1,65 @@
+/* Design tokens. Copied from design/preview.html (:root) plus the avatar palette.
+   This is the only file that may contain raw colour values. */
+:root {
+  --bg: #14122B;
+  --surface: #1F1C3F;
+  --surface-2: #2A2654;
+  --border: #3A3570;
+  --text: #F4F1FF;
+  --muted: #A9A3D1;
+  --accent: #FFB547;
+  --accent-ink: #2A1A00;
+  --impostor: #FF4D6D;
+  --success: #3DDC97;
+
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+
+  --radius-card: 20px;
+  --radius-pill: 999px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  --space: 16px;
+
+  /* Avatar palette (.a1-.a5 in the preview). Also the colours players can pick on their profile. */
+  --avatar-1: #FFB547;
+  --avatar-2: #8C7BFF;
+  --avatar-3: #3DDC97;
+  --avatar-4: #FF8FB1;
+  --avatar-5: #5CC8FF;
+
+  /* Literal values the preview's component CSS uses inline (gradients, overlays, etc.).
+     Named here so that components never contain raw colours. */
+  --page-bg: #0C0B1C;
+  --placeholder: #6E68A0;
+  --on-impostor: #2B0010;
+  --bg-danger: #3A1230;
+  --bg-win: #12342E;
+  --reveal-word-from: #2B2650;
+  --reveal-imp-from: #4A1533;
+  --reveal-imp-to: #2A1236;
+  --score-lead-from: #2E2852;
+  --camera-hi: #3B3440;
+  --camera-lo: #121018;
+  --qr-bg: #FFFFFF;
+  --scrim: rgba(8, 7, 20, .65);
+  --camera-shade: rgba(8, 7, 20, .45);
+  --hairline: rgba(255, 255, 255, .04);
+  --hairline-strong: rgba(255, 255, 255, .12);
+  --shadow-sheet: 0 -10px 30px rgba(0, 0, 0, .4);
+  --shadow-tab: 0 2px 8px rgba(0, 0, 0, .3);
+
+  /* Translucent tints of the brand colours, as used in the preview (e.g. rgba(255,181,71,.14)). */
+  --accent-a12: rgba(255, 181, 71, 0.12);
+  --accent-a14: rgba(255, 181, 71, 0.14);
+  --accent-a25: rgba(255, 181, 71, 0.25);
+  --accent-a50: rgba(255, 181, 71, 0.5);
+  --accent-a55: rgba(255, 181, 71, 0.55);
+  --accent-a70: rgba(255, 181, 71, 0.7);
+  --accent-a8: rgba(255, 181, 71, 0.08);
+  --impostor-a14: rgba(255, 77, 109, 0.14);
+  --impostor-a25: rgba(255, 77, 109, 0.25);
+  --success-a12: rgba(61, 220, 151, 0.12);
+  --success-a14: rgba(61, 220, 151, 0.14);
+  --success-a35: rgba(61, 220, 151, 0.35);
+  --success-a50: rgba(61, 220, 151, 0.5);
+}

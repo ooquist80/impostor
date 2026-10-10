@@ -1,0 +1,17 @@
+# Local config and data
+.env
+backups/
+
+# Word list: private, copied to each server by hand (see README)
+backend/data/*.csv
+!backend/data/words.example.csv
+
+# Node
+node_modules/
+frontend/dist/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/

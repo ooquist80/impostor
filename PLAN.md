@@ -23,8 +23,9 @@ backend/
   alembic.ini               # script_location = migrations; no URL here (env.py supplies it)
   migrations/env.py         # URL from app.config settings, target_metadata = app.models.Base.metadata
   migrations/versions/0001_initial_schema.py  # categories, words, players, games, game_players
-  migrations/versions/0002_seed_words.py      # ~60 Swedish word/clue pairs across categories (data migration)
-  app/main.py               # FastAPI app (no CORS: the browser reaches it only through the Vite proxy or Caddy)
+  app/main.py               # FastAPI app (no CORS: the browser reaches it only through the Vite proxy or Caddy); imports the word list on startup
+  app/seed.py               # reads data/words.csv (category,word,clue) and inserts missing categories and words
+  data/words.csv            # the word list, gitignored and copied to servers by hand; data/words.example.csv shows the format
   app/config.py             # settings read from env and the root .env: MARIADB_*, DB_HOST, DB_PORT, SECRET_KEY, token lifetimes; builds the DB URL
   app/db.py                 # engine/session from the settings' DB URL
   app/models.py             # SQLAlchemy Category, Word, Player, Game, GamePlayer
@@ -51,7 +52,7 @@ frontend/
   src/components/Reveal.tsx     # "Pass to X" → tap to reveal → hide → next
   src/components/Play.tsx       # single "Avslöja bedragaren" button, no turn handling
   src/components/Vote.tsx       # anonymous vote in turns: "Ge enheten till X" → pick a suspect → hide → next
-  src/components/End.tsx        # round result: right/wrong, real impostor + word + clue, vote tally, points this round, category row + "Ändra" sheet, "Nästa runda" / "Avsluta"
+  src/components/End.tsx        # round result: right/wrong, real impostor + word + clue, vote tally, everyone's points this round and running total, category row + "Ändra" sheet, "Nästa runda" / "Avsluta"
   src/components/CategoryPicker.tsx # chips + "Välj alla"/"Avmarkera alla", shared by Setup and the End sheet
   src/components/Scoreboard.tsx # final scores after "Avsluta", saves the result, "Nytt spel" (same players)
   src/components/account/Login.tsx     # login / register tabs
@@ -86,10 +87,13 @@ Stats are computed with an aggregate query over `game_players`, not stored as co
 - The DB URL that `config.py` builds ends in `?charset=utf8mb4`, so the connection itself doesn't mangle emoji.
 
 ## Migrations (Alembic)
-Alembic owns the schema **and** the seed words. There is no `db/init/` SQL; MariaDB starts with an empty database and `alembic upgrade head` builds it.
+Alembic owns the schema. There is no `db/init/` SQL; MariaDB starts with an empty database and `alembic upgrade head` builds it. Words are not in migrations (see Word list).
 - `app/models.py` is the source of truth for the schema. A schema change is made by editing the models, then running `alembic revision --autogenerate -m "..."`, then reading and fixing the generated file before committing it. Autogenerate misses some changes, such as renames, and can't do data changes.
-- Seed words are data migrations: `0002_seed_words` inserts the first set with `op.bulk_insert`. **New words or categories later go in a new migration**, so they reach running servers through `make update`. The `downgrade()` deletes exactly the rows its `upgrade()` inserted.
-- Migrations **never import `app.models`**. A data migration defines the tables and columns it touches inline with `sa.table("words", sa.column("word"), ...)`. The models change over time, but an old migration has to keep working against the schema as it was when it was written, for example on a fresh install that runs every migration from `0001`.
+- **Word list.** The words live in `backend/data/words.csv` (header `category,word,clue`), which is gitignored so the list never reaches GitHub. On startup (FastAPI lifespan) the backend imports it with `app/seed.py`:
+  - Add only: categories and words missing from the DB are inserted (a word matches on category + word, case-insensitive). Nothing is updated or removed.
+  - A missing file logs a warning and is skipped; a malformed file stops startup with the line number.
+  - In Docker, `./backend/data` is bind-mounted read-only at `/app/data`. `WORDS_CSV` overrides the path. The file is copied to each server by hand, and `docker compose restart backend` imports changes.
+- Migrations **never import `app.models`**. A migration that touches data defines the tables and columns it touches inline with `sa.table("words", sa.column("word"), ...)`. The models change over time, but an old migration has to keep working against the schema as it was when it was written, for example on a fresh install that runs every migration from `0001`.
 - Revision files get readable, ordered ids (`0001`, `0002`, …) via `--rev-id`.
 - An applied migration is never edited. A fix goes in a new migration.
 - Every migration has a working `downgrade()`. Rolling back is a manual step: `docker compose run --rm backend alembic downgrade -1`.
@@ -155,7 +159,7 @@ Games:
      - Reveal: pass the device, look at your word or clue in secret, hide it and pass it on.
      - Discussion: the starting player begins; talk about the word without giving it away. When most of you want to vote, tap "Avslöja bedragaren".
      - Voting: everyone votes in turn and in secret, the impostor too; you can't vote for yourself.
-     - Points: 1 p for each player who votes for the impostor, and 1 p to the impostor for every incorrect vote (see Scoring). Your points are shown only when the game ends, so nobody can tell how you voted. Points add up over rounds, and the highest total wins.
+     - Points: 1 p for each player who votes for the impostor, and 1 p to the impostor for every incorrect vote (see Scoring). Everyone's points for the round and running total are shown after each vote. Points add up over rounds, and the highest total wins.
      - Rounds: "Nästa runda" or "Avsluta", and that categories can be changed between rounds.
 
      The rules text is static in `Rules.tsx`. Any change to the game flow or Scoring must update it too.
@@ -167,15 +171,14 @@ Games:
    - **The impostor votes too**, on the same screen with the same texts, so nobody can tell who the impostor is from how the turns look. The impostor's vote is ignored in scoring and in the tally.
    - Nobody's vote is shown to the next player, and no running tally is shown during the vote.
    - Votes are held as `votes: Record<voter, accused>` in round state only. They are never sent to the backend, and who voted for whom is never shown.
-   - **The vote is secret, including whether a vote was correct.** No screen during the game shows a non-impostor's points for a round or their running total. Those players' points only appear as totals on the Scoreboard after "Avsluta".
+   - **Who voted for whom is secret.** No points are shown during the vote. Once everyone has voted, End shows every player's points for the round and their running total, so it can be deduced who voted correctly; this is accepted.
    - After "Bekräfta" a "Rösten är lagd" screen tells the voter who to pass to, with "Dölj och skicka vidare". For the last voter it says everyone has voted and the button is "Visa resultatet", which goes to End.
 6. **End (round result)**: the impostor is shown only here, after everyone has voted. This completes the round. It shows:
    - The headline: **"Rätt!"** if the impostor got strictly more votes than any other player, otherwise **"Fel!"** (this includes a tie for most votes). The headline is only the group's verdict; points don't depend on it.
    - Who the real impostor was, the word and the clue.
    - One list of all players, sorted by votes received (most first), each row showing only the number of votes they got. It shows counts only, not who voted for whom.
-   - The impostor's row is marked 🕵️ and has a red badge with the impostor's points this round (`+0 p` when none). This is the only per-round score shown. The other players' points are added to their totals without being shown, so nobody can tell who voted correctly.
-   - A hint in the list header: "Era poäng visas när ni avslutar".
-   - Limits that follow from showing the vote counts at all, and are accepted: when every vote lands on the impostor (or none does), everyone can tell that all votes were correct (or wrong). The Scoreboard shows totals, so in a one-round game the totals reveal who voted correctly; over several rounds they only show how many correct votes each player had in total.
+   - Every row has a badge with that player's points this round (`+0 p` when none) and the player's running total after this round. The impostor's row is marked 🕵️ and its badge is red; other players' badges are green, or grey for `+0 p`.
+   - A hint in the list header: "Poäng · totalt".
 
    Then the players choose:
    - **Category row** (above the buttons): shows the current categories, for example "Kategorier: Djur · Mat · Sport", with an **"Ändra"** link. "Ändra" opens a bottom sheet with the same category chips and "Välj alla" toggle as Setup, pre-selected with the current categories. "Spara" applies the change and is disabled when no category is selected. "Avbryt", or tapping outside the sheet, closes it without changing anything.
@@ -238,7 +241,7 @@ Screens are composed from these components. A screen does not style things on it
 | 2–4 | `Reveal.tsx` (pass, word, impostor) |
 | 5 | `Play.tsx` |
 | 6a, 6b, 6c | `Vote.tsx` (pass, pick with the voter left out, vote cast) |
-| 7, 8, 8b | `End.tsx` (impostor caught, impostor got away, both with the vote list and the impostor's points; "Ändra" sheet via `CategoryPicker`) |
+| 7, 8, 8b | `End.tsx` (impostor caught, impostor got away, both with the vote list, everyone's round points and totals; "Ändra" sheet via `CategoryPicker`) |
 | 9 | `Scoreboard.tsx` |
 | 10 | `QrScanner.tsx` |
 | 11 | `account/Login.tsx` |
@@ -246,7 +249,7 @@ Screens are composed from these components. A screen does not style things on it
 | 13 | `account/MyQr.tsx` |
 
 **Rules the mock-up can't show**
-- Use only the token colours, never raw hex values in components. `--impostor` red is reserved for the impostor reveal, "Avslöja bedragaren", "Fel!" and the impostor's points badge on the round result. `--success` green is reserved for "Rätt!", points and registered/saved states.
+- Use only the token colours, never raw hex values in components. `--impostor` red is reserved for the impostor reveal, "Avslöja bedragaren", "Fel!" and the impostor's points badge on the round result. `--success` green is reserved for "Rätt!", points (including other players' round badges) and registered/saved states.
 - One main action per screen, in the bottom footer. Buttons span the full width and are at least 52px tall.
 - Mobile first: a single column at most 420px wide, centred, with no horizontal scroll at 360px width.
 - The Swedish texts in the preview are the final wording. Texts missing from the preview (errors, empty states) follow the same tone: short, informal "du".
@@ -293,7 +296,7 @@ Goal: any machine with Docker, including a Raspberry Pi, can host the app with `
 | `DB_PORT` | `3306` | Localhost-only DB port for native dev |
 | `SECRET_KEY` | – | JWT signing key; `.env.example` tells the host to generate one with `openssl rand -hex 32` |
 
-- The Caddyfile reads `{$SITE_ADDRESS}`. It switches TLS with `import tls_{$TLS_MODE}`, choosing between two snippets: `tls_internal` (`tls internal`) and `tls_acme` (empty, Caddy's automatic HTTPS).
+- The Caddyfile reads `{$SITE_ADDRESS}` and sets the global `default_sni {$SITE_ADDRESS}`. Browsers send no SNI when the address is an IP, and behind Docker's NAT Caddy can't match the certificate by its local address, so without this the TLS handshake fails. It switches TLS with `import tls_{$TLS_MODE}`, choosing between two snippets: `tls_internal` (`tls internal`) and `tls_acme` (empty, Caddy's automatic HTTPS).
 - `backend/app/config.py` builds the DB URL from `MARIADB_*`, `DB_HOST` (default `127.0.0.1`) and `DB_PORT`. Native dev therefore uses the same root `.env` with no extra file.
   - The `.env` path is computed from `config.py`'s own location (`Path(__file__).resolve().parents[2] / ".env"`), so uvicorn, alembic and pytest find it whatever folder they are started from.
   - A missing `.env` is ignored. In Docker it doesn't exist (it isn't in the `backend/` build context), and the values come from `environment:`. Real environment variables take precedence over the file.
@@ -316,12 +319,12 @@ Goal: any machine with Docker, including a Raspberry Pi, can host the app with `
 
 **Makefile** (repo root) has four targets: `start` and `update` for the server, and `backup` and `migrate`, which `update` (and `start`, for `migrate`) call and which can also be run on their own. Targets that call other targets use `$(MAKE) <target>`, not plain `make`, so flags and variables like `BACKUP_KEEP` are passed on.
 - `make migrate` runs `docker compose run --rm backend alembic upgrade head`. `run` starts `db` first and waits for its healthcheck, so this works on a fresh install too. It is a no-op when the DB is already at head.
-- `make start` runs `docker compose build`, then `make migrate`, then `docker compose up -d`. The first start on a new server therefore creates the tables and seed words before the backend serves requests.
+- `make start` runs `docker compose build`, then `make migrate`, then `docker compose up -d`. The first start on a new server therefore creates the tables before the backend starts, and the backend imports the word list as it starts.
 - `make update` brings the server to the latest `main` from GitHub:
   1. `git pull --ff-only origin main`. With `--ff-only`, the command stops with an error instead of creating a merge commit if the server's checkout has local commits. Git also refuses if uncommitted edits would be overwritten. The server never ends up in a half-merged state.
   2. `docker compose build`. This builds the new images while the old containers keep serving.
   3. `make backup`. Dumps the database before anything touches it (see below). If the backup fails, make stops here and nothing is migrated.
-  4. `make migrate`. The new backend image applies any new migrations (schema and seed words) to the live DB. If a migration fails, make stops here and the old containers stay up. To undo a half-applied migration, restore the backup from step 3 (see Restoring, case A).
+  4. `make migrate`. The new backend image applies any new migrations to the live DB. If a migration fails, make stops here and the old containers stay up. To undo a half-applied migration, restore the backup from step 3 (see Restoring, case A).
   5. `docker compose up -d`. This recreates only the containers whose image changed. The database and Caddy volumes are kept.
   6. `docker image prune -f`. This removes the old image layers left behind by every rebuild, which would otherwise slowly fill a Pi's SD card.
 
@@ -366,14 +369,14 @@ It also covers:
 - How to add a migration (see Migrations).
 
 ## Delegation
-- **fastapi-developer** agent: `docker-compose.yml`, `.env.example`, `.gitignore` entries for `.env` and `backups/`, `backend/` (Dockerfile, config, models, Alembic setup + migrations `0001`/`0002`, security, all routes, tests), `Makefile` and `README.md`.
+- **fastapi-developer** agent: `docker-compose.yml`, `.env.example`, `.gitignore` entries for `.env` and `backups/`, `backend/` (Dockerfile, config, models, Alembic setup + migration `0001`, the word import, security, all routes, tests), `Makefile` and `README.md`.
 - **react-specialist** agent: `frontend/` (scaffold + vite config, `Dockerfile`, `Caddyfile`, `tokens.css`, `ui/` components, `api.ts`, `auth.ts`, `game.ts` + tests, all screens, `frontend/CLAUDE.md`). It gets the Design section above and is told to read `design/preview.html` first.
 - The service names, ports and `.env` variables in Hosting are the shared contract for the Docker files.
 - The API contract above is the interface between them, so both can run in parallel. I review and run the verification steps after.
 
 ## Verification
 1. Run `cp .env.example .env`, `docker compose up -d db` and `cd backend && alembic upgrade head`, then check:
-   - The seeded rows exist: `docker compose exec db mariadb ... -e "select count(*) from words"`.
+   - After starting the backend, the word list rows exist: `docker compose exec db mariadb ... -e "select count(*) from words"`. Restarting it adds nothing.
    - `alembic check` reports no differences between the models and the migrations.
    - `alembic downgrade base` followed by `alembic upgrade head` succeeds, which proves the downgrades work.
    - `SHOW CREATE TABLE players` shows `utf8mb4` and `utf8mb4_uca1400_swedish_ai_ci`.
@@ -397,7 +400,7 @@ It also covers:
    - The impostor sees only the clue.
    - After the reveal, Play shows a starting player and the "Avslöja bedragaren" button.
    - Vote asks each player in turn, never shows the impostor, never lists the voter themselves, and never shows earlier votes. The impostor's vote turn looks the same as everyone else's.
-   - End shows the correct headline, impostor, word and vote counts, and the impostor's points, but not who voted for whom and no points for the other players. Scores don't appear anywhere until the Scoreboard.
+   - End shows the correct headline, impostor, word and vote counts, and every player's round points and running total, but not who voted for whom. No points appear during the vote.
    - Play 2–3 rounds with "Nästa runda" (one round where everyone votes correctly, one with mixed votes), then "Avsluta". The scoreboard totals match the scoring rules.
    - On a round result, open "Ändra", pick a single category and press "Spara". The next round's word comes from that category. "Avbryt" leaves the categories unchanged, and "Spara" is disabled with nothing selected.
    - "Nytt spel" returns to Setup with the names and the most recent category selection kept, and the scores reset.
@@ -424,7 +427,7 @@ It also covers:
      2. Clone the server copy from it: `git clone <scratch>/origin.git <scratch>/server`. In the server copy, `origin` is the bare repo, so `make update` (`git pull origin main`) pulls from it.
      3. Push test commits from a throwaway branch in the dev clone with `git push <scratch>/origin.git HEAD:main`.
      4. Afterwards, delete the scratch repos and the throwaway branch. Nothing is pushed to GitHub.
-   - Schema update: on the throwaway branch, add a test migration (for example a nullable column plus one new seed word) and push it to the bare repo. `make update` in the server copy applies it: `docker compose run --rm backend alembic current` shows the new head, the new word can be drawn, and existing accounts and stats still exist.
+   - Schema update: on the throwaway branch, add a test migration (for example a nullable column) and push it to the bare repo. `make update` in the server copy applies it: `docker compose run --rm backend alembic current` shows the new head, and existing accounts and stats still exist.
    - Failed migration (case A): push a migration that fails halfway, for example one that creates a table and then runs invalid SQL. `make update` stops at migrate, and the site keeps working. Follow the case A restore steps. The leftover table is gone and the old backend works. Then push a fixed migration; `make update` succeeds.
    - With a local commit, or an uncommitted edit to a file the pushed change also touches, in the server clone, `make update` fails at the `git pull` step and leaves the running containers untouched.
    - Backup: `make backup` creates a non-empty `backups/impostor-*.sql.gz`, and `make` echoes no password. After 12 runs with `BACKUP_KEEP=10`, exactly 10 files remain.
