@@ -282,13 +282,14 @@ Goal: any machine with Docker, including a Raspberry Pi, can host the app with `
   - It waits on `depends_on: db: condition: service_healthy`.
   - It is not published; only `web` reaches it.
 - `web` (built from `frontend/`):
-  - Caddy serves the built SPA and proxies `/api/*` to `backend:8000`. It publishes `${HTTP_PORT}` and `${HTTPS_PORT}`.
+  - Caddy serves the built SPA and proxies `/api/*` to `backend:8000`. It publishes `${HTTP_PORT}` and `${HTTPS_PORT}`, on the same port numbers inside the container.
   - A named volume for `/data` keeps Caddy's certificates and its local CA across restarts, so phones only accept the certificate once.
 
 **`.env`.** `.env.example` is committed with comments, and `.env` is gitignored. It holds only what a host may need to change:
 | Variable | Example | Purpose |
 |---|---|---|
 | `SITE_ADDRESS` | `raspberrypi.local` or `192.168.1.50` | Hostname or IP that players open; Caddy issues the cert for it |
+| `PROTOCOL` | `https` (default) or `http` | `http`: plain HTTP on `HTTP_PORT`, no certificate, `TLS_MODE` ignored (camera won't work on phones without HTTPS in front) |
 | `TLS_MODE` | `internal` (default) or `acme` | `internal`: Caddy's own CA, for LAN use. `acme`: Let's Encrypt, for a public domain in `SITE_ADDRESS` |
 | `HTTP_PORT` / `HTTPS_PORT` | `80` / `443` | Ports published by `web` |
 | `MARIADB_ROOT_PASSWORD` | – | DB root password |
@@ -296,16 +297,16 @@ Goal: any machine with Docker, including a Raspberry Pi, can host the app with `
 | `DB_PORT` | `3306` | Localhost-only DB port for native dev |
 | `SECRET_KEY` | – | JWT signing key; `.env.example` tells the host to generate one with `openssl rand -hex 32` |
 
-- The Caddyfile reads `{$SITE_ADDRESS}` and sets the global `default_sni {$SITE_ADDRESS}`. Browsers send no SNI when the address is an IP, and behind Docker's NAT Caddy can't match the certificate by its local address, so without this the TLS handshake fails. It switches TLS with `import tls_{$TLS_MODE}`, choosing between two snippets: `tls_internal` (`tls internal`) and `tls_acme` (empty, Caddy's automatic HTTPS).
+- The Caddyfile reads `{$SITE_ADDRESS}` and sets the global `default_sni {$SITE_ADDRESS}`. Browsers send no SNI when the address is an IP, and behind Docker's NAT Caddy can't match the certificate by its local address, so without this the TLS handshake fails. The global `http_port {$HTTP_PORT}` makes the http→https redirect listen on the published port. `https_port` stays at its default 443 on purpose: Caddy leaves that port out of redirect URLs, so setting it would drop a non-default `HTTPS_PORT` from the redirect. `import site_{$PROTOCOL}_{$TLS_MODE}` picks one of four site snippets: `https://{$SITE_ADDRESS}:{$HTTPS_PORT}` with `tls internal` or with Caddy's automatic HTTPS (acme), or `http://{$SITE_ADDRESS}:{$HTTP_PORT}` without TLS for either `TLS_MODE`. The port is in the site address so Caddy's http→https redirect includes it. All four share an `(app)` snippet (gzip, `/api/*` proxy, SPA files).
 - `backend/app/config.py` builds the DB URL from `MARIADB_*`, `DB_HOST` (default `127.0.0.1`) and `DB_PORT`. Native dev therefore uses the same root `.env` with no extra file.
   - The `.env` path is computed from `config.py`'s own location (`Path(__file__).resolve().parents[2] / ".env"`), so uvicorn, alembic and pytest find it whatever folder they are started from.
   - A missing `.env` is ignored. In Docker it doesn't exist (it isn't in the `backend/` build context), and the values come from `environment:`. Real environment variables take precedence over the file.
   - Settings unrelated to the backend in the shared `.env` (`SITE_ADDRESS`, ports, root password) are ignored (`extra="ignore"`).
 - Token lifetimes keep their code defaults and are not in `.env`.
-- `.env.example` documents the limits of non-default ports next to `HTTP_PORT`/`HTTPS_PORT`. They are only documented, not handled in code:
-  - With an `HTTPS_PORT` other than 443, players open `https://<SITE_ADDRESS>:<HTTPS_PORT>`.
-  - The automatic http→https redirect assumes 443, so with other ports, players must type the `https://` address with the port.
-  - `TLS_MODE=acme` (Let's Encrypt) requires `HTTP_PORT=80` and `HTTPS_PORT=443` to be reachable from the internet.
+- `.env.example` documents the ports next to `HTTP_PORT`/`HTTPS_PORT`:
+  - With an `HTTPS_PORT` other than 443, players open `https://<SITE_ADDRESS>:<HTTPS_PORT>`; `HTTP_PORT` redirects there.
+  - With `PROTOCOL=http`, players open `http://<SITE_ADDRESS>:<HTTP_PORT>`.
+  - `TLS_MODE=acme` (Let's Encrypt) requires `HTTP_PORT=80` and `HTTPS_PORT=443` to be reachable from the internet (documented only).
 
 **HTTPS on the LAN.** The camera needs HTTPS, so `TLS_MODE=internal` is the default.
 - Each phone shows a certificate warning the first time and has to accept it.

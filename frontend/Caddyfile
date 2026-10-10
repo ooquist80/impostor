@@ -1,21 +1,19 @@
-# TLS_MODE=internal -> Caddy's own CA (LAN), TLS_MODE=acme -> Let's Encrypt (public domain).
+# PROTOCOL=https (default) or http, from .env.
+# With https: TLS_MODE=internal -> Caddy's own CA (LAN), TLS_MODE=acme -> Let's Encrypt (public domain).
 
 {
+	# The container listens on the same ports as the host. The http -> https
+	# redirect listens on http_port. https_port is left at its default (443) on
+	# purpose: Caddy leaves that port out of redirect URLs, so setting it to
+	# HTTPS_PORT would drop a non-default port from the redirect.
+	http_port {$HTTP_PORT}
+
 	# Browsers send no SNI when SITE_ADDRESS is an IP, and behind Docker's NAT
 	# Caddy can't match the certificate by the local address either.
 	default_sni {$SITE_ADDRESS}
 }
 
-(tls_internal) {
-	tls internal
-}
-
-(tls_acme) {
-}
-
-{$SITE_ADDRESS} {
-	import tls_{$TLS_MODE}
-
+(app) {
 	encode gzip zstd
 
 	handle /api/* {
@@ -28,3 +26,31 @@
 		file_server
 	}
 }
+
+# One site per PROTOCOL/TLS_MODE pair; the import below picks one.
+# The port is part of the address so the http -> https redirect includes it.
+(site_https_internal) {
+	https://{$SITE_ADDRESS}:{$HTTPS_PORT} {
+		tls internal
+		import app
+	}
+}
+
+(site_https_acme) {
+	https://{$SITE_ADDRESS}:{$HTTPS_PORT} {
+		import app
+	}
+}
+
+# Plain HTTP: no certificate, whatever TLS_MODE says.
+(site_http_internal) {
+	http://{$SITE_ADDRESS}:{$HTTP_PORT} {
+		import app
+	}
+}
+
+(site_http_acme) {
+	import site_http_internal
+}
+
+import site_{$PROTOCOL}_{$TLS_MODE}

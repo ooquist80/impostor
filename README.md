@@ -12,12 +12,16 @@ Any machine with Docker can host the app, including a Raspberry Pi.
 4. Copy the word list to `backend/data/words.csv` (see [Word list](#word-list)).
 5. `make start`. This builds the images, creates the tables and starts the stack.
 6. `make import` to load the word list.
-7. Open `https://<SITE_ADDRESS>` and accept the certificate warning.
+7. Open `https://<SITE_ADDRESS>` and accept the certificate warning (see below for other ports and plain HTTP).
 
 The camera (QR scanning) needs HTTPS, so `TLS_MODE=internal` (Caddy's own CA) is the default. Each phone shows a certificate warning the first time. If the camera still doesn't work after accepting it, install Caddy's root certificate on the phone. Copy it out of the web container with
 `docker compose cp web:/data/caddy/pki/authorities/local/root.crt .` and install it as a trusted CA on the phone.
 
-With non-default ports, players open `https://<SITE_ADDRESS>:<HTTPS_PORT>` (the http to https redirect assumes 443). `TLS_MODE=acme` (Let's Encrypt, for a public domain) needs ports 80 and 443 reachable from the internet.
+`PROTOCOL`, `HTTP_PORT` and `HTTPS_PORT` in `.env` set how players reach the game. After changing them, run `docker compose up -d web`.
+
+- `PROTOCOL=https` (default): players open `https://<SITE_ADDRESS>:<HTTPS_PORT>` (no port for 443). `http://<SITE_ADDRESS>:<HTTP_PORT>` redirects there.
+- `PROTOCOL=http`: plain HTTP on `http://<SITE_ADDRESS>:<HTTP_PORT>`, with no certificate and `TLS_MODE` ignored. Phones only allow the camera over HTTPS, so QR scanning won't work unless another reverse proxy in front adds HTTPS.
+- `TLS_MODE=acme` (Let's Encrypt, for a public domain) needs ports 80 and 443 reachable from the internet.
 
 ### Raspberry Pi
 
