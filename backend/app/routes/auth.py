@@ -1,4 +1,4 @@
-import random
+import secrets
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
@@ -20,9 +20,11 @@ from app.schemas import (
 
 router = APIRouter(prefix="/api", tags=["auth"])
 
-# Avatar palette from the design (--avatar-1 ... --avatar-5).
-AVATAR_COLORS = ["#FFB547", "#8C7BFF", "#3DDC97", "#FF8FB1", "#5CC8FF"]
-DEFAULT_EMOJI = "🙂"
+
+
+def new_avatar() -> dict:
+    """A random seed and no picks: the app draws a Thumbs avatar from the seed."""
+    return {"seed": secrets.token_hex(8)}
 
 
 @router.post("/auth/register", response_model=AuthOut)
@@ -36,8 +38,7 @@ def register(body: RegisterIn, db: Session = Depends(get_db)):
         email=email,
         name=body.name,
         password_hash=security.hash_password(body.password),
-        avatar_emoji=DEFAULT_EMOJI,
-        avatar_color=random.choice(AVATAR_COLORS),
+        avatar=new_avatar(),
     )
     db.add(player)
     try:
@@ -90,9 +91,6 @@ def update_me(
     player: Player = Depends(get_current_player),
     db: Session = Depends(get_db),
 ):
-    if body.avatar_emoji is not None:
-        player.avatar_emoji = body.avatar_emoji
-    if body.avatar_color is not None:
-        player.avatar_color = body.avatar_color
+    player.avatar = body.avatar.model_dump(exclude_none=True)
     db.commit()
     return player

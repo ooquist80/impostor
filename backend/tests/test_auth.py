@@ -12,8 +12,8 @@ def test_register_returns_token_and_player(client):
     assert body["token"]
     player = body["player"]
     assert player["name"] == "Anna"
-    assert player["avatar_emoji"] == "🙂"
-    assert player["avatar_color"] in {"#FFB547", "#8C7BFF", "#3DDC97", "#FF8FB1", "#5CC8FF"}
+    # A new player gets a random seed and no editor picks.
+    assert set(player["avatar"]) == {"seed"} and len(player["avatar"]["seed"]) == 16
     # The email is never part of the public player data.
     assert "email" not in player
     assert "password" not in str(body)
@@ -75,27 +75,35 @@ def test_me_returns_player_email_and_zero_stats(client):
 
 def test_patch_me_updates_avatar(client):
     token = register(client)["token"]
-    r = client.patch(
-        "/api/me",
-        headers=auth_header(token),
-        json={"avatar_emoji": "🦊", "avatar_color": "#3DDC97"},
-    )
+    avatar = {"seed": "abc", "eyes": "variant3W14", "mouth": "variant2", "shapeColor": "#3DDC97", "backgroundColor": "#2A2654"}
+    r = client.patch("/api/me", headers=auth_header(token), json={"avatar": avatar})
     assert r.status_code == 200
-    assert r.json()["avatar_emoji"] == "🦊"
+    assert r.json()["avatar"] == avatar
     me = client.get("/api/me", headers=auth_header(token)).json()["player"]
-    assert (me["avatar_emoji"], me["avatar_color"]) == ("🦊", "#3DDC97")
-    # Partial update keeps the other field.
-    client.patch("/api/me", headers=auth_header(token), json={"avatar_emoji": "🐱"})
+    assert me["avatar"] == avatar
+    # The whole avatar is replaced: picks left out go back to the seed's choice.
+    client.patch("/api/me", headers=auth_header(token), json={"avatar": {"seed": "xyz"}})
     me = client.get("/api/me", headers=auth_header(token)).json()["player"]
-    assert (me["avatar_emoji"], me["avatar_color"]) == ("🐱", "#3DDC97")
+    assert me["avatar"] == {"seed": "xyz"}
 
 
 def test_patch_me_validation_and_auth(client):
     token = register(client)["token"]
     h = auth_header(token)
-    assert client.patch("/api/me", headers=h, json={"avatar_color": "red"}).status_code == 422
-    assert client.patch("/api/me", headers=h, json={"avatar_emoji": ""}).status_code == 422
-    assert client.patch("/api/me", json={"avatar_emoji": "🦊"}).status_code == 401
+    bad = [
+        {},
+        {"seed": ""},
+        {"seed": "x" * 65},
+        {"seed": "a", "eyes": "variant10W14"},
+        {"seed": "a", "eyes": "variant3W11"},
+        {"seed": "a", "mouth": "variant6"},
+        {"seed": "a", "shapeColor": "red"},
+        {"seed": "a", "backgroundColor": "#12345"},
+        {"seed": "a", "hair": "long"},  # unknown options are rejected
+    ]
+    for avatar in bad:
+        assert client.patch("/api/me", headers=h, json={"avatar": avatar}).status_code == 422, avatar
+    assert client.patch("/api/me", json={"avatar": {"seed": "a"}}).status_code == 401
 
 
 def test_join_token_is_not_an_auth_token(client):
@@ -106,6 +114,6 @@ def test_join_token_is_not_an_auth_token(client):
 
 def test_swedish_names_roundtrip(client):
     token = register(client, "Åsa", email="asa@example.com")["token"]
-    client.patch("/api/me", headers=auth_header(token), json={"avatar_emoji": "🦊"})
+    client.patch("/api/me", headers=auth_header(token), json={"avatar": {"seed": "Åsa ✨"}})
     p = client.get("/api/me", headers=auth_header(token)).json()["player"]
-    assert (p["name"], p["avatar_emoji"]) == ("Åsa", "🦊")
+    assert (p["name"], p["avatar"]["seed"]) == ("Åsa", "Åsa ✨")

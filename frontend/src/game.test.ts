@@ -87,7 +87,7 @@ describe('roundVerdict', () => {
 
 describe('gameSummary', () => {
   const players: Player[] = [
-    { name: 'Anna', kind: 'registered', participantToken: 'tok-anna', avatar: { emoji: '🦊', color: 'x' } },
+    { name: 'Anna', kind: 'registered', participantToken: 'tok-anna', avatar: { seed: 'anna' } },
     { name: 'Erik', kind: 'guest' },
     { name: 'Sara', kind: 'registered', participantToken: 'tok-sara' },
     { name: 'Johan', kind: 'guest' },
@@ -109,7 +109,7 @@ describe('gameSummary', () => {
 })
 
 describe('addRegisteredEntry', () => {
-  const anna = { id: 1, name: 'Anna', avatar_emoji: '🦊', avatar_color: '#000000' }
+  const anna = { id: 1, name: 'Anna', avatar: { seed: 'abc', eyes: 'variant3W14' } }
   let id = 100
   const make = () => ({ id: id++, name: '' })
   const names = (r: ReturnType<typeof addRegisteredEntry>) => (r.ok ? r.entries.map((e) => e.name) : r.reason)
@@ -117,7 +117,7 @@ describe('addRegisteredEntry', () => {
   it('fills the first empty guest field', () => {
     const r = addRegisteredEntry([{ id: 1, name: 'Erik' }, { id: 2, name: '' }, { id: 3, name: '' }], anna, 'pt', make)
     expect(names(r)).toEqual(['Erik', 'Anna', ''])
-    expect(r.ok && r.entries[1].registered).toEqual({ playerId: 1, participantToken: 'pt', avatar: { emoji: '🦊', color: '#000000' } })
+    expect(r.ok && r.entries[1].registered).toEqual({ playerId: 1, participantToken: 'pt', avatar: { seed: 'abc', eyes: 'variant3W14' } })
   })
 
   it('appends a row when no field is empty', () => {

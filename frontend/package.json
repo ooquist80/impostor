@@ -12,6 +12,8 @@
     "icons": "pwa-assets-generator"
   },
   "dependencies": {
+    "@dicebear/core": "^9.4.3",
+    "@dicebear/thumbs": "^9.4.2",
     "qr-scanner": "^1.4.2",
     "qrcode.react": "^4.2.0",
     "react": "^19.3.0",

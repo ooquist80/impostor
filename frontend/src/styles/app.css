@@ -113,9 +113,14 @@ input { font-family: inherit; }
 .bsheet .chip.on { background: var(--accent-a14); }
 
 /* ---------- Avatar ---------- */
-.avatar { border-radius: 50%; flex: none; display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; color: var(--bg); }
-.a1 { background: var(--avatar-1); } .a2 { background: var(--avatar-2); } .a3 { background: var(--avatar-3); }
-.a4 { background: var(--avatar-4); } .a5 { background: var(--avatar-5); }
+.avatar { display: block; border-radius: 50%; flex: none; background: var(--surface-2); }
+
+/* ---------- Avatar editor (profile) ---------- */
+.avatar-editor-head { display: grid; justify-items: center; gap: 8px; }
+.picker { display: grid; gap: 8px; }
+.picker-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.picker-row button { padding: 2px; border-radius: 50%; border: 2px solid transparent; background: none; }
+.picker-row button.on { border-color: var(--accent); }
 
 /* ---------- Reveal card ---------- */
 .reveal-card {
@@ -177,10 +182,7 @@ button.player { cursor: pointer; }
 .crown { font-size: 40px; }
 
 /* ---------- Profile & QR ---------- */
-.emoji-row { display: flex; gap: 6px; justify-content: space-between; }
-.emoji-row button { width: 38px; height: 38px; flex: 0 1 38px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; background: var(--surface-2); border: 2px solid transparent; padding: 0; }
-.emoji-row button.on { border-color: var(--accent); }
-.color-row { display: flex; gap: 10px; margin-top: 12px; }
+.color-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .color-row button { width: 26px; height: 26px; border-radius: 50%; border: 0; padding: 0; }
 .color-row button.on { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--text); }
 .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

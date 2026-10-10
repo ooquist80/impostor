@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ApiError, getMe, patchMe } from '../../api'
 import { useAuth } from '../../auth'
-import type { ApiPlayer, Stats } from '../../types'
+import type { ApiPlayer, Avatar as AvatarData, Stats } from '../../types'
 import { Screen } from '../ui/Screen'
 import { Button, LinkButton } from '../ui/Button'
 import { Card } from '../ui/Card'
-import { Avatar, avatarPalette } from '../ui/Avatar'
+import { Avatar } from '../ui/Avatar'
+import { BottomSheet } from '../ui/BottomSheet'
+import { AvatarEditor } from './AvatarEditor'
 import { MyQr } from './MyQr'
-
-const EMOJIS = ['🦊', '🐸', '🐙', '🦄', '🐼', '👽', '🎃']
 
 type Props = { onBack: () => void }
 
@@ -16,9 +16,8 @@ export function Profile({ onBack }: Props) {
   const auth = useAuth()
   const [data, setData] = useState<{ player: ApiPlayer; email: string; stats: Stats } | null>(null)
   const [failed, setFailed] = useState(false)
-  const [saveError, setSaveError] = useState(false)
+  const [editing, setEditing] = useState(false)
   const [showQr, setShowQr] = useState(false)
-  const palette = avatarPalette()
 
   const load = useCallback(() => {
     getMe().then(setData, (err) => {
@@ -36,18 +35,10 @@ export function Profile({ onBack }: Props) {
     load()
   }
 
-  const change = async (changes: { avatar_emoji?: string; avatar_color?: string }) => {
-    if (!data) return
-    setSaveError(false)
-    const before = data
-    setData({ ...data, player: { ...data.player, ...changes } })
-    try {
-      const player = await patchMe(changes)
-      setData((d) => (d ? { ...d, player } : d))
-    } catch {
-      setData(before)
-      setSaveError(true)
-    }
+  const saveAvatar = async (avatar: AvatarData) => {
+    const player = await patchMe({ avatar })
+    setData((d) => (d ? { ...d, player } : d))
+    setEditing(false)
   }
 
   if (showQr && data) return <MyQr player={data.player} onBack={() => setShowQr(false)} />
@@ -71,38 +62,19 @@ export function Profile({ onBack }: Props) {
   }
 
   const { player, stats } = data
-  const avatar = { emoji: player.avatar_emoji, color: player.avatar_color }
 
   return (
     <Screen left={back} right={logout} footer={<Button onClick={() => setShowQr(true)}>▣ Visa min QR-kod</Button>}>
       <div className="profile-head">
-        <Avatar name={player.name} avatar={avatar} size={72} />
+        <Avatar name={player.name} avatar={player.avatar} size={72} />
         <div>
           <div className="display d-l">{player.name}</div>
           <p className="muted small">{data.email}</p>
         </div>
       </div>
       <Card title="Avatar">
-        <div className="emoji-row">
-          {EMOJIS.map((e) => (
-            <button key={e} type="button" className={e === player.avatar_emoji ? 'on' : ''} aria-label={`Välj ${e}`} onClick={() => change({ avatar_emoji: e })}>
-              {e}
-            </button>
-          ))}
-        </div>
-        <div className="color-row">
-          {palette.map((c, i) => (
-            <button
-              key={c}
-              type="button"
-              className={c.toLowerCase() === player.avatar_color.toLowerCase() ? 'on' : ''}
-              style={{ background: c }}
-              aria-label={`Välj färg ${i + 1}`}
-              onClick={() => change({ avatar_color: c })}
-            />
-          ))}
-        </div>
-        {saveError && <p className="form-error mt-12">Kunde inte spara avataren.</p>}
+        <p className="muted small">Så ser du ut för de andra i spelet.</p>
+        <Button variant="secondary" small className="mt-12" onClick={() => setEditing(true)}>Ändra avatar</Button>
       </Card>
       <div className="stats">
         <Card><b>{stats.games}</b><span>Spel</span></Card>
@@ -110,6 +82,9 @@ export function Profile({ onBack }: Props) {
         <Card><b>{stats.total_points}</b><span>Poäng totalt</span></Card>
         <Card><b className="red">{stats.impostor_rounds}</b><span>Rundor som bedragare</span></Card>
       </div>
+      <BottomSheet open={editing} onClose={() => setEditing(false)} label="Ändra avatar">
+        {editing && <AvatarEditor name={player.name} avatar={player.avatar} onSave={saveAvatar} onCancel={() => setEditing(false)} />}
+      </BottomSheet>
     </Screen>
   )
 }

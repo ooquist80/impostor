@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import (
-    CHAR,
+    JSON,
     Boolean,
     DateTime,
     ForeignKey,
@@ -54,8 +54,9 @@ class Player(Base):
     # Display name in games. Not unique.
     name: Mapped[str] = mapped_column(String(30))
     password_hash: Mapped[str] = mapped_column(String(255))
-    avatar_emoji: Mapped[str] = mapped_column(String(8), default="🙂")
-    avatar_color: Mapped[str] = mapped_column(CHAR(7))
+    # DiceBear "Thumbs" options: {"seed": ...} plus the picks from the avatar editor
+    # (eyes, mouth, shapeColor, backgroundColor). Validated by schemas.Avatar.
+    avatar: Mapped[dict] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now()
     )

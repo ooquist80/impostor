@@ -3,7 +3,7 @@
 ## Context
 The repo contains only planning files and the design mock-up (`design/preview.html`). Build a web game where players sit together and pass one device around. Each player privately reveals either the secret word, or, if they are the impostor, a clue to it. After the reveal the device is put down and the players discuss off-screen while the impostor tries to blend in. The app handles setup, the private reveal, and a final step where, once a majority of the players want to vote, every player in turn secretly votes for who they think the impostor is, and the app shows the result. A game consists of one or more rounds, and points are tracked across rounds.
 
-Players can optionally **register** an account (name + password) on their own phone. A registered player has an avatar and saved stats, and joins a game by showing a QR code that the game device scans. Guests can still join by typing a name, and both kinds of player can be in the same game.
+Players can optionally **register** an account (email + name + password) on their own phone. A registered player has an avatar they can edit and saved stats, and joins a game by showing a QR code that the game device scans. Guests can still join by typing a name, and both kinds of player can be in the same game.
 
 The game itself runs only on the **game device**. The backend serves words, handles accounts, issues and redeems QR join tokens, and stores finished-game results. There are no live/multiplayer sessions. A registered player's phone is only used to log in and show a QR code. The game device does not need to be logged in, so anyone can host a game.
 
@@ -58,7 +58,9 @@ frontend/
   src/components/CategoryPicker.tsx # chips + "Välj alla"/"Avmarkera alla", shared by Setup and the End sheet
   src/components/Scoreboard.tsx # final scores after "Avsluta", saves the result, "Nytt spel" (same players)
   src/components/account/Login.tsx     # login / register tabs
-  src/components/account/Profile.tsx   # avatar picker, stats, "Visa min QR-kod"
+  src/components/account/Profile.tsx   # name + email, "Ändra avatar", stats, "Visa min QR-kod"
+  src/components/account/AvatarEditor.tsx # avatar editor in a BottomSheet: preview, Slumpa, eyes, mouth, colour, background
+  src/avatar.ts             # DiceBear "Thumbs" rendering (on the device), editor choices, guest seeds
   src/components/account/MyQr.tsx      # full-screen QR, auto-refreshes before expiry
   src/game.ts               # pure logic: pickImpostor, pickStartingPlayer, validateSetup, tallyVotes, roundVerdict, scoreRound, gameSummary
   src/game.test.ts          # vitest for pure logic
@@ -72,19 +74,19 @@ The frontend has no router. Game phases are handled with component state, and a 
 ## Database schema
 - `categories(id PK, name VARCHAR UNIQUE)`, for example Djur, Mat, Platser, Yrken, Sport, Saker.
 - `words(id PK, word VARCHAR, clue VARCHAR, category_id FK)`. Example rows: `Elefant` with clue `Snabel`, and `Pizza` with clue `Italien`.
-- `players(id PK, email VARCHAR(254) UNIQUE, name VARCHAR(30), password_hash, avatar_emoji VARCHAR(8), avatar_color CHAR(7), created_at)`.
+- `players(id PK, email VARCHAR(254) UNIQUE, name VARCHAR(30), password_hash, avatar JSON, created_at)`.
   - `email` is the login. It must be a well-formed address (pydantic `EmailStr`, no confirmation mail) and is stored lower-cased. It is shown only on the player's own profile, never in games or on the game device. Uniqueness is enforced in two places:
     - `register` checks for an existing `func.lower(email) == email.lower()` before inserting and returns 409. This also works on SQLite, so the tests cover it.
     - The `UNIQUE` index on `email` uses the case-insensitive collation, so it catches the race where two registrations pass the check at the same time. An `IntegrityError` on insert is also turned into 409.
   - `name` is the display name shown in games (trimmed, 2–30 characters). It is **not** unique: several accounts can be called "Anna". Within one game names must still differ (see Setup).
   - Migration `0002` replaced the old `username` column and wiped all existing accounts, games and stats.
-  - Defaults: a random colour from the design palette and the emoji 🙂.
+  - `avatar` holds DiceBear "Thumbs" options: `{seed, eyes?, mouth?, shapeColor?, backgroundColor?}`. A new player gets a random 16-hex seed and no picks; picks left unset are chosen from the seed. Validated by `schemas.Avatar` (eyes `variant1–9W10/12/14/16`, mouth `variant1–5`, colours `#RRGGBB`, unknown keys rejected). Migration `0003` replaced the old emoji + colour columns, seeding existing players from their id.
 - `games(id PK, finished_at, rounds INT)`.
 - `game_players(game_id FK, player_id FK, points INT, impostor_rounds INT, won BOOL, PK(game_id, player_id))`. There is one row per registered player in a saved game.
 
 Stats are computed with an aggregate query over `game_players`, not stored as counters.
 
-**Character set.** Words and player names contain å, ä and ö, and avatars are emoji (4-byte UTF-8), so everything is `utf8mb4`:
+**Character set.** Words and player names contain å, ä and ö, and avatar seeds may contain emoji (4-byte UTF-8), so everything is `utf8mb4`:
 - The `db` service starts MariaDB with `--character-set-server=utf8mb4 --collation-server=utf8mb4_uca1400_swedish_ai_ci`. The Swedish collation treats å, ä and ö as their own letters (so "Åsa" and "Asa" sort and compare as different names) and sorts them last, as in Swedish.
 - Every table in the migrations sets `mariadb_charset="utf8mb4"` and `mariadb_collate="utf8mb4_uca1400_swedish_ai_ci"`, so the schema doesn't depend on server defaults.
 - The DB URL that `config.py` builds ends in `?charset=utf8mb4`, so the connection itself doesn't mangle emoji.
@@ -119,9 +121,9 @@ Accounts. Auth uses `Authorization: Bearer <auth token>`, a JWT valid for 30 day
   - It returns 409 if the email is already registered (case-insensitive).
 - `POST /api/auth/login` takes `{email, password}` and returns `{token, player}`, or 401.
 - `GET /api/me` returns `{player, email, stats}`. This is the only response that contains the email.
-  - `player` is `{id, name, avatar_emoji, avatar_color}`, the same public shape everywhere (also from QR redeem).
+  - `player` is `{id, name, avatar}`, the same public shape everywhere (also from QR redeem). `avatar` only contains the picks that are set.
   - `stats` is `{games, wins, total_points, impostor_rounds}`.
-- `PATCH /api/me` takes `{avatar_emoji?, avatar_color?}` and returns the updated `player`.
+- `PATCH /api/me` takes `{avatar}` (the whole avatar; picks left out go back to the seed's choice) and returns the updated `player`.
 
 QR join:
 - `POST /api/join-tokens` requires auth and returns `{token, expires_at}`.
@@ -142,7 +144,8 @@ Games:
 0. **Account pages** (on a player's own phone): a profile button in the top bar opens them.
    - **Not logged in:** a "Logga in" / "Skapa konto" form.
    - **Logged in, Profile page:**
-     - The avatar (emoji + colour) with a picker.
+     - The name, and the email below it (the only place the email is shown).
+     - **"Ändra avatar"** opens the avatar editor in a `BottomSheet`: a live preview, "🎲 Slumpa" (new random seed, clears the picks), 9 eye styles, 5 mouths, body colour (the 5 avatar palette colours) and background (`--surface-2` or a palette colour), each shown as a small preview. "Spara" saves with `PATCH /api/me`; "Avbryt" or tapping outside discards the changes.
      - Stats cards: games, wins, points, and rounds as impostor.
      - A big **"Visa min QR-kod"** button. It shows the QR code full-screen with the name and avatar, and fetches a new join token about every 90 s.
      - "Logga ut".
@@ -169,7 +172,7 @@ Games:
 
      The rules text is static in `Rules.tsx`. Any change to the game flow or Scoring must update it too.
 2. **Start**: clicking "Starta spelet" fetches a random word from the selected categories, picks exactly one impostor at random and one random starting player (any player, including the impostor), then goes to Reveal. This is repeated for every round, so the same player can be impostor twice in a row.
-3. **Reveal** (the device is passed around; it is passed again for the vote): for each player in setup order, show "Ge enheten till {namn}". Tapping shows "Ordet: X", or for the impostor "Du är bedragaren! Ledtråd: Y". Then "Dölj och skicka vidare". After the last player, go to Play. Registered players are shown with their avatar.
+3. **Reveal** (the device is passed around; it is passed again for the vote): for each player in setup order, show "Ge enheten till {namn}". Tapping shows "Ordet: X", or for the impostor "Du är bedragaren! Ledtråd: Y". Then "Dölj och skicka vidare". After the last player, go to Play. Every player is shown with their avatar.
 4. **Play**: the device stays on the table. The screen shows "{namn} börjar!" for the random starting player, a short instruction to discuss and to vote when most of the group is ready, and one button, "Avslöja bedragaren". The app does not handle turns; the discussion happens off-screen. The group decides off-screen when a **majority** wants to vote, and then taps the button. The app does not count who wants to vote.
 5. **Vote** (the device is passed around again): voting is **anonymous** and done **in turns**, in setup order, like Reveal. The impostor is not shown yet.
    - For each player: "Ge enheten till {namn}" → "Rösta" → the list of all **other** players (you can't vote for yourself) → pick one → "Bekräfta" → the "Rösten är lagd" screen (below). Until "Bekräfta", the player can change their pick.
@@ -211,7 +214,7 @@ This is implemented as pure functions:
 - `scoreRound(players, impostor, votes) -> Record<player, points>`.
 
 The `scoreRound` result is added to the running totals held in `App.tsx` state:
-- `players: Player[]`, where `Player` is `{name, kind: 'guest' | 'registered', participantToken?, avatar?}`. Registered players get `participantToken` and `avatar` from the redeem call.
+- `players: Player[]`, where `Player` is `{name, kind: 'guest' | 'registered', participantToken?, avatar?}`. Registered players get `participantToken` and `avatar` from the redeem call. Guests have no `avatar`; theirs is drawn with their name as the seed.
 - `scores: Record<string, number>`, keyed by player name (names are unique)
 - `impostorRounds: Record<string, number>`
 - `round: number`
@@ -223,13 +226,13 @@ Scores for the game in progress live only in frontend state and are lost on page
 ## Design
 `design/preview.html` (the "Spelkväll" design) is the **visual source of truth**. Open it and read its CSS and markup. Match it; don't reinterpret it.
 
-**Tokens.** Copy the `:root` block (colours, fonts, radii, shadow) as is into `frontend/src/styles/tokens.css`. Add the avatar palette (`.a1`–`.a5` in the preview) to it as `--avatar-1` … `--avatar-5`; these are also the colours players can pick on their profile. Load the Google Fonts link in `index.html`. Use plain CSS with variables (CSS Modules or one global stylesheet), with no UI library and no Tailwind.
+**Tokens.** Copy the `:root` block (colours, fonts, radii, shadow) as is into `frontend/src/styles/tokens.css`. Add the avatar palette (`.a1`–`.a5` in the preview) to it as `--avatar-1` … `--avatar-5`; these are also the body colours offered in the avatar editor and used for guests. Load the Google Fonts link in `index.html`. Use plain CSS with variables (CSS Modules or one global stylesheet), with no UI library and no Tailwind.
 
 **Shared components** (in `src/components/ui/`, built from the preview's classes):
 - `Button` (primary/secondary/danger/scan)
 - `Card`
 - `Chip`
-- `Avatar` (letter for guests, emoji + colour for registered players)
+- `Avatar`: a DiceBear "Thumbs" image (`@dicebear/core` + `@dicebear/thumbs` 9.x, rendered on the device so it works offline; artwork CC0). Guests are seeded with their name on the dark `--surface-2` background with a palette body colour; registered players use their stored options.
 - `PlayerRow`
 - `ScoreRow`
 - `Badge`
@@ -250,7 +253,7 @@ Screens are composed from these components. A screen does not style things on it
 | 9 | `Scoreboard.tsx` |
 | 10 | `QrScanner.tsx` |
 | 11 | `account/Login.tsx` |
-| 12 | `account/Profile.tsx` |
+| 12, 12b | `account/Profile.tsx`, `account/AvatarEditor.tsx` (profile; avatar editor sheet) |
 | 13 | `account/MyQr.tsx` |
 
 **Rules the mock-up can't show**
@@ -386,7 +389,7 @@ It also covers:
    - `alembic check` reports no differences between the models and the migrations.
    - `alembic downgrade base` followed by `alembic upgrade head` succeeds, which proves the downgrades work.
    - `SHOW CREATE TABLE players` shows `utf8mb4` and `utf8mb4_uca1400_swedish_ai_ci`.
-   - Registering `Åsa` with avatar 🦊 and reading it back via `/api/me` returns both unchanged. Registering `Asa` afterwards succeeds, while `åsa` gives 409.
+   - Registering `Åsa` and saving an avatar seed with emoji, then reading it back via `/api/me`, returns both unchanged.
    - `grep -r "app.models\|from app" backend/migrations/versions` finds nothing.
 2. Run `cd backend && python -m app.seed && uvicorn app.main:app --reload`, then `curl localhost:8000/api/words/random`. It should return Swedish JSON.
 3. Run `pytest` in backend:

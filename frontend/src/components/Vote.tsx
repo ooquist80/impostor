@@ -57,12 +57,11 @@ export function Vote({ players, roundNumber, onDone }: Props) {
           <p className="muted small mt-4">Ingen får veta vad du röstar på. Du kan ändra dig tills du bekräftar.</p>
         </div>
         <div className="stack" role="radiogroup" aria-label="Vem är bedragaren?">
-          {players.map((p, i) =>
+          {players.map((p) =>
             p.name === voter.name ? null : (
               <PlayerRow
                 key={p.name}
                 player={p}
-                index={i}
                 selectable
                 selected={pick === p.name}
                 onSelect={() => setPick(p.name)}

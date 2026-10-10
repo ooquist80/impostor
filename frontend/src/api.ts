@@ -1,5 +1,5 @@
 import { clearToken, getToken } from './auth'
-import type { ApiPlayer, Category, Stats, WordResult } from './types'
+import type { ApiPlayer, Avatar, Category, Stats, WordResult } from './types'
 import type { GameSummary } from './game'
 
 export class ApiError extends Error {
@@ -55,8 +55,7 @@ export const login = (email: string, password: string) =>
 /** The email is only returned here, for the player's own profile. */
 export const getMe = () => request<{ player: ApiPlayer; email: string; stats: Stats }>('GET', '/api/me')
 
-export const patchMe = (changes: { avatar_emoji?: string; avatar_color?: string }) =>
-  request<ApiPlayer>('PATCH', '/api/me', changes)
+export const patchMe = (changes: { avatar: Avatar }) => request<ApiPlayer>('PATCH', '/api/me', changes)
 
 export const createJoinToken = () => request<{ token: string; expires_at: string }>('POST', '/api/join-tokens')
 

@@ -1,4 +1,5 @@
-export type Avatar = { emoji: string; color: string }
+/** DiceBear "Thumbs" options. Unset picks are chosen from the seed. Colours are "#RRGGBB". */
+export type Avatar = { seed: string; eyes?: string; mouth?: string; shapeColor?: string; backgroundColor?: string }
 
 export type Player = {
   name: string
@@ -14,8 +15,7 @@ export type WordResult = { word: string; clue: string; category: string }
 export type ApiPlayer = {
   id: number
   name: string
-  avatar_emoji: string
-  avatar_color: string
+  avatar: Avatar
 }
 
 export type Stats = {

@@ -1,14 +1,29 @@
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, model_serializer
 
 Name = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=2, max_length=30)
 ]
 Password = Annotated[str, Field(min_length=6, max_length=128)]
-AvatarEmoji = Annotated[str, Field(min_length=1, max_length=8)]
 AvatarColor = Annotated[str, Field(pattern=r"^#[0-9a-fA-F]{6}$")]
+
+
+class Avatar(BaseModel):
+    """DiceBear "Thumbs" options. Unset picks are chosen from the seed."""
+
+    model_config = ConfigDict(extra="forbid")
+    seed: Annotated[str, Field(min_length=1, max_length=64)]
+    eyes: Annotated[str, Field(pattern=r"^variant[1-9]W(10|12|14|16)$")] | None = None
+    mouth: Annotated[str, Field(pattern=r"^variant[1-5]$")] | None = None
+    shapeColor: AvatarColor | None = None
+    backgroundColor: AvatarColor | None = None
+
+    @model_serializer(mode="wrap")
+    def _drop_unset(self, handler):
+        # Only the picks that are set, the same shape as stored.
+        return {k: v for k, v in handler(self).items() if v is not None}
 
 
 class CategoryOut(BaseModel):
@@ -28,8 +43,7 @@ class PlayerOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     name: str
-    avatar_emoji: str
-    avatar_color: str
+    avatar: Avatar
 
 
 class Stats(BaseModel):
@@ -63,8 +77,7 @@ class MeOut(BaseModel):
 
 
 class MeUpdate(BaseModel):
-    avatar_emoji: AvatarEmoji | None = None
-    avatar_color: AvatarColor | None = None
+    avatar: Avatar
 
 
 class JoinTokenOut(BaseModel):

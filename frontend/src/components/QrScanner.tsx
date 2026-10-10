@@ -134,7 +134,7 @@ export function QrScanner({ onAdd, onClose }: Props) {
                     toast.player && (
                       <Avatar
                         name={toast.player.name}
-                        avatar={{ emoji: toast.player.avatar_emoji, color: toast.player.avatar_color }}
+                        avatar={toast.player.avatar}
                         size={28}
                       />
                     )

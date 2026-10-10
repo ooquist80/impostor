@@ -88,11 +88,11 @@ export function End({ players, round, votes, scores, roundNumber, categories, ca
           <span className="eyebrow">Röster</span>
           <span className="hint">Poäng · totalt</span>
         </div>
-        {rows.map(({ p, i, n }) => {
+        {rows.map(({ p, n }) => {
           const isImpostor = p.name === round.impostor
           const pts = points[p.name] ?? 0
           return (
-            <PlayerRow key={p.name} player={p} index={i} avatarSize={32} mark={isImpostor ? '🕵️' : undefined}>
+            <PlayerRow key={p.name} player={p} avatarSize={32} mark={isImpostor ? '🕵️' : undefined}>
               <span className="votes">{votesText(n)}</span>
               <Badge variant={isImpostor ? 'red' : pts > 0 ? 'green' : 'zero'}>+{pts} p</Badge>
               <span className="total">{scores[p.name] ?? 0}</span>

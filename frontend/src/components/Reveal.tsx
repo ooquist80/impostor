@@ -18,7 +18,7 @@ export function Reveal({ players, round, roundNumber, onDone }: Props) {
     return (
       <Screen right={top} center footer={<Button onClick={() => setShown(true)}>Visa mitt ord</Button>}>
         <div className="eyebrow">Spelare {index + 1} av {players.length}</div>
-        {player.avatar && <Avatar name={player.name} avatar={player.avatar} index={index} size={56} />}
+        <Avatar name={player.name} avatar={player.avatar} size={56} />
         <div className="display d-l">
           Ge enheten till
           <br />

@@ -7,15 +7,14 @@ import { Avatar } from './ui/Avatar'
 type Props = { players: Player[]; starter: string; roundNumber: number; onVote: () => void }
 
 export function Play({ players, starter, roundNumber, onVote }: Props) {
-  const index = players.findIndex((p) => p.name === starter)
-  const player = players[index]
+  const player = players.find((p) => p.name === starter) ?? players[0]
   return (
     <Screen
       right={<RoundTag>Runda {roundNumber}</RoundTag>}
       center
       footer={<Button variant="danger" onClick={onVote}>Avslöja bedragaren</Button>}
     >
-      <Avatar name={player.name} avatar={player.avatar} index={index} size={88} />
+      <Avatar name={player.name} avatar={player.avatar} size={88} />
       <div className="display d-l mt-8">
         <span className="amber">{player.name}</span> börjar!
       </div>

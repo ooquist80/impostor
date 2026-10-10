@@ -84,7 +84,6 @@ export function Scoreboard({ players, scores, impostorRounds, rounds, onNewGame 
             key={r.p.name}
             rank={r.rank}
             player={r.p}
-            index={r.i}
             points={r.pts}
             share={best > 0 ? r.pts / best : 0}
             lead={r.pts === best && !everyoneTied}

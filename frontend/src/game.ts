@@ -49,7 +49,7 @@ export function addRegisteredEntry(
 ): AddResult {
   if (entries.some((e) => e.registered?.playerId === player.id)) return { ok: false, reason: 'already' }
   if (entries.some((e) => e.name.trim().toLowerCase() === player.name.toLowerCase())) return { ok: false, reason: 'nameTaken' }
-  const registered = { playerId: player.id, participantToken, avatar: { emoji: player.avatar_emoji, color: player.avatar_color } }
+  const registered = { playerId: player.id, participantToken, avatar: player.avatar }
   const empty = entries.find((e) => !e.registered && e.name.trim() === '')
   return {
     ok: true,

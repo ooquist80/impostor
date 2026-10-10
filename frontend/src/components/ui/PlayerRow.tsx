@@ -4,7 +4,6 @@ import type { Player } from '../../types'
 
 type Props = {
   player: Player
-  index: number
   avatarSize?: number
   /** Marks the row as a radio option (voting). */
   selectable?: boolean
@@ -15,10 +14,10 @@ type Props = {
   children?: ReactNode
 }
 
-export function PlayerRow({ player, index, avatarSize = 40, selectable, selected, onSelect, mark, children }: Props) {
+export function PlayerRow({ player, avatarSize = 40, selectable, selected, onSelect, mark, children }: Props) {
   const inner = (
     <>
-      <Avatar name={player.name} avatar={player.avatar} index={index} size={avatarSize} />
+      <Avatar name={player.name} avatar={player.avatar} size={avatarSize} />
       <span className="name">{mark ? `${player.name} ${mark}` : player.name}</span>
       {children}
       {selectable && <span className="radio" />}
