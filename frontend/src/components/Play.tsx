@@ -1,12 +1,21 @@
 import type { Player } from '../types'
+import { rankScores } from '../game'
 import { Screen, RoundTag } from './ui/Screen'
 import { Button } from './ui/Button'
 import { Card } from './ui/Card'
 import { Avatar } from './ui/Avatar'
+import { Standings } from './ui/ScoreRow'
 
-type Props = { players: Player[]; starter: string; roundNumber: number; onVote: () => void }
+type Props = {
+  players: Player[]
+  /** Total points before this round. */
+  scores: Record<string, number>
+  starter: string
+  roundNumber: number
+  onVote: () => void
+}
 
-export function Play({ players, starter, roundNumber, onVote }: Props) {
+export function Play({ players, scores, starter, roundNumber, onVote }: Props) {
   const player = players.find((p) => p.name === starter) ?? players[0]
   return (
     <Screen
@@ -24,6 +33,13 @@ export function Play({ players, starter, roundNumber, onVote }: Props) {
           bedragaren. När de flesta vill rösta trycker ni på knappen.
         </p>
       </Card>
+      <div className="standings-block mt-12">
+        <div className="tally-head">
+          <span className="eyebrow">Ställning</span>
+          <span className="hint">{roundNumber === 1 ? 'Inga poäng än' : `Efter runda ${roundNumber - 1}`}</span>
+        </div>
+        <Standings rows={rankScores(players, scores)} />
+      </div>
     </Screen>
   )
 }

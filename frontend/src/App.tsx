@@ -191,7 +191,7 @@ export function App() {
     case 'reveal':
       return current && <Reveal players={players} round={current} roundNumber={round} onDone={() => setPhase('play')} />
     case 'play':
-      return current && <Play players={players} starter={current.starter} roundNumber={round} onVote={() => setPhase('vote')} />
+      return current && <Play players={players} scores={scores} starter={current.starter} roundNumber={round} onVote={() => setPhase('vote')} />
     case 'vote':
       return <Vote players={players} roundNumber={round} onDone={finishVote} />
     case 'end':

@@ -1,5 +1,6 @@
 import { Avatar } from './Avatar'
 import type { Player } from '../../types'
+import type { Standing } from '../../game'
 
 type Props = {
   rank: number
@@ -22,6 +23,17 @@ export function ScoreRow({ rank, player, points, share, lead }: Props) {
         </div>
       </div>
       <span className={`pts ${lead ? 'amber' : ''}`.trim()}>{points}</span>
+    </div>
+  )
+}
+
+/** The game's score list, as ranked by `rankScores`. */
+export function Standings({ rows }: { rows: Standing[] }) {
+  return (
+    <div className="stack">
+      {rows.map((r) => (
+        <ScoreRow key={r.player.name} rank={r.rank} player={r.player} points={r.points} share={r.share} lead={r.lead} />
+      ))}
     </div>
   )
 }

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Player } from '../types'
-import { gameSummary } from '../game'
+import { gameSummary, rankScores } from '../game'
 import { saveGame } from '../api'
 import { Screen, RoundTag } from './ui/Screen'
 import { Button, LinkButton } from './ui/Button'
-import { ScoreRow } from './ui/ScoreRow'
+import { Standings } from './ui/ScoreRow'
 
 type Props = {
   players: Player[]
@@ -41,14 +41,9 @@ export function Scoreboard({ players, scores, impostorRounds, rounds, onNewGame 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const ranked = players
-    .map((p, i) => ({ p, i, pts: scores[p.name] ?? 0 }))
-    .sort((a, b) => b.pts - a.pts || a.i - b.i)
-  const best = ranked[0].pts
-  const winners = ranked.filter((r) => r.pts === best).map((r) => r.p.name)
+  const rows = rankScores(players, scores)
+  const winners = rows.filter((r) => r.rank === 1).map((r) => r.player.name)
   const everyoneTied = winners.length === players.length
-
-  const rows = ranked.map((r) => ({ ...r, rank: ranked.findIndex((x) => x.pts === r.pts) + 1 }))
 
   return (
     <Screen
@@ -78,18 +73,7 @@ export function Scoreboard({ players, scores, impostorRounds, rounds, onNewGame 
           )}
         </div>
       </div>
-      <div className="stack">
-        {rows.map((r) => (
-          <ScoreRow
-            key={r.p.name}
-            rank={r.rank}
-            player={r.p}
-            points={r.pts}
-            share={best > 0 ? r.pts / best : 0}
-            lead={r.pts === best && !everyoneTied}
-          />
-        ))}
-      </div>
+      <Standings rows={rows} />
     </Screen>
   )
 }

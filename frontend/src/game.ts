@@ -113,3 +113,24 @@ export function gameSummary(
       })),
   }
 }
+
+export type Standing = { player: Player; points: number; rank: number; share: number; lead: boolean }
+
+/**
+ * Players by total points, highest first; ties keep the player order and share a rank.
+ * `share` is the part of the leader's points (for the bar). Nobody leads while everyone is tied.
+ */
+export function rankScores(players: Player[], scores: Record<string, number>): Standing[] {
+  const ranked = players
+    .map((player, i) => ({ player, i, points: scores[player.name] ?? 0 }))
+    .sort((a, b) => b.points - a.points || a.i - b.i)
+  const best = ranked[0]?.points ?? 0
+  const everyoneTied = ranked.every((r) => r.points === best)
+  return ranked.map(({ player, points }) => ({
+    player,
+    points,
+    rank: ranked.findIndex((r) => r.points === points) + 1,
+    share: best > 0 ? points / best : 0,
+    lead: points === best && !everyoneTied,
+  }))
+}

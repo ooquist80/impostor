@@ -52,7 +52,7 @@ frontend/
   src/components/Rules.tsx      # game rules as text, opened from Setup in a BottomSheet
   src/components/QrScanner.tsx  # camera modal, decodes QR, redeems the join token
   src/components/Reveal.tsx     # "Pass to X" → tap to reveal → hide → next
-  src/components/Play.tsx       # single "Avslöja bedragaren" button, no turn handling
+  src/components/Play.tsx       # starting player, standings so far, single "Avslöja bedragaren" button, no turn handling
   src/components/Vote.tsx       # anonymous vote in turns: "Ge enheten till X" → pick a suspect → hide → next
   src/components/End.tsx        # round result: right/wrong, real impostor + word + clue, vote tally, everyone's points this round and running total, category row + "Ändra" sheet, "Nästa runda" / "Avsluta"
   src/components/CategoryPicker.tsx # chips + "Välj alla"/"Avmarkera alla", shared by Setup and the End sheet
@@ -173,7 +173,7 @@ Games:
      The rules text is static in `Rules.tsx`. Any change to the game flow or Scoring must update it too.
 2. **Start**: clicking "Starta spelet" fetches a random word from the selected categories, picks exactly one impostor at random and one random starting player (any player, including the impostor), then goes to Reveal. This is repeated for every round, so the same player can be impostor twice in a row.
 3. **Reveal** (the device is passed around; it is passed again for the vote): for each player in setup order, show "Ge enheten till {namn}". Tapping shows "Ordet: X", or for the impostor "Du är bedragaren! Ledtråd: Y". Then "Dölj och skicka vidare". After the last player, go to Play. Every player is shown with their avatar.
-4. **Play**: the device stays on the table. The screen shows "{namn} börjar!" for the random starting player, a short instruction to discuss and to vote when most of the group is ready, and one button, "Avslöja bedragaren". The app does not handle turns; the discussion happens off-screen. The group decides off-screen when a **majority** wants to vote, and then taps the button. The app does not count who wants to vote.
+4. **Play**: the device stays on the table. The screen shows "{namn} börjar!" for the random starting player, a short instruction to discuss and to vote when most of the group is ready, and one button, "Avslöja bedragaren". The app does not handle turns; the discussion happens off-screen. The group decides off-screen when a **majority** wants to vote, and then taps the button. The app does not count who wants to vote. Below the instruction, "Ställning" lists every player's total so far, ranked like the final scoreboard (`rankScores` in `game.ts`, `Standings` in `ui/ScoreRow.tsx`), with "Inga poäng än" in round 1 and "Efter runda N" after that.
 5. **Vote** (the device is passed around again): voting is **anonymous** and done **in turns**, in setup order, like Reveal. The impostor is not shown yet.
    - For each player: "Ge enheten till {namn}" → "Rösta" → the list of all **other** players (you can't vote for yourself) → pick one → "Bekräfta" → the "Rösten är lagd" screen (below). Until "Bekräfta", the player can change their pick.
    - **The impostor votes too**, on the same screen with the same texts, so nobody can tell who the impostor is from how the turns look. The impostor's vote is ignored in scoring and in the tally.

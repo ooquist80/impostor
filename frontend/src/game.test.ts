@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addRegisteredEntry, gameSummary, pickImpostor, pickStartingPlayer, roundVerdict, scoreRound, tallyVotes, validateSetup } from './game'
+import { addRegisteredEntry, gameSummary, pickImpostor, pickStartingPlayer, rankScores, roundVerdict, scoreRound, tallyVotes, validateSetup } from './game'
 import type { Player } from './types'
 
 const names = ['Anna', 'Erik', 'Sara', 'Johan']
@@ -135,5 +135,22 @@ describe('addRegisteredEntry', () => {
     const otherAnna = { ...anna, id: 2 }
     const r = addRegisteredEntry([{ id: 1, name: '' }], anna, 'pt', make)
     expect(names(r.ok ? addRegisteredEntry(r.entries, otherAnna, 'pt', make) : r)).toBe('nameTaken')
+  })
+})
+
+describe('rankScores', () => {
+  const players: Player[] = names.map((name) => ({ name, kind: 'guest' }))
+  it('sorts by points, ties share a rank and keep the player order', () => {
+    const rows = rankScores(players, { Anna: 1, Erik: 3, Sara: 1, Johan: 0 })
+    expect(rows.map((r) => [r.player.name, r.rank, r.points])).toEqual([['Erik', 1, 3], ['Anna', 2, 1], ['Sara', 2, 1], ['Johan', 4, 0]])
+    expect(rows.map((r) => r.lead)).toEqual([true, false, false, false])
+    expect(rows[1].share).toBeCloseTo(1 / 3)
+  })
+  it('has no leader and empty bars before anyone scores', () => {
+    const rows = rankScores(players, {})
+    expect(rows.every((r) => r.rank === 1 && !r.lead && r.share === 0)).toBe(true)
+  })
+  it('marks every tied leader', () => {
+    expect(rankScores(players, { Anna: 2, Erik: 2, Sara: 1 }).map((r) => r.lead)).toEqual([true, true, false, false])
   })
 })

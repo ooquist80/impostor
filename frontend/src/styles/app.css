@@ -184,6 +184,7 @@ button.player { cursor: pointer; }
 .bar { height: 6px; border-radius: 6px; background: var(--surface-2); margin-top: 6px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--accent); border-radius: 6px; }
 .score .pts { font: 800 22px var(--font-display); }
+.standings-block { display: grid; gap: 8px; width: 100%; text-align: left; }
 .score.lead { border: 2px solid var(--accent-a50); background: linear-gradient(160deg, var(--score-lead-from), var(--surface)); }
 .crown { font-size: 40px; }
 
