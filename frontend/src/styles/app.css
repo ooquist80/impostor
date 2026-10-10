@@ -105,6 +105,11 @@ input { font-family: inherit; }
 .field label { font-size: 13px; font-weight: 600; color: var(--muted); }
 .field small { font-size: 12px; color: var(--muted); }
 .form-error { font-size: 13px; color: var(--accent); text-align: center; }
+.field-error { color: var(--accent); }
+/* Password field with a show/hide toggle inside it. */
+.pw-field { position: relative; }
+.pw-field .input { padding-right: 64px; }
+.pw-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); min-height: 36px; padding: 0 10px; border: 0; background: none; font: 600 13px var(--font-body); color: var(--accent); }
 
 .tabs { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; border-radius: var(--radius-pill); background: var(--surface-2); }
 .tabs button { text-align: center; padding: 10px; border-radius: var(--radius-pill); font-size: 14px; font-weight: 600; color: var(--muted); background: none; border: 0; }

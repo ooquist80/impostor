@@ -92,6 +92,11 @@
     font: 600 16px var(--font-body); cursor: pointer;
   }
   .btn-primary { background: var(--accent); color: var(--accent-ink); box-shadow: 0 6px 18px rgba(255,181,71,.25); }
+  .field small.field-error { color: var(--accent); }
+  /* Password field with a show/hide toggle inside it. */
+  .pw-field { position: relative; }
+  .pw-field .input { padding-right: 64px; }
+  .pw-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); padding: 8px 10px; font: 600 13px var(--font-body); color: var(--accent); }
   .btn-primary:disabled { background: var(--surface-2); color: var(--muted); box-shadow: none; }
   .btn-secondary { background: transparent; color: var(--text); border: 1.5px solid var(--border); }
   .btn-danger { background: var(--impostor); color: #2B0010; }
@@ -728,7 +733,7 @@
     <figure>
       <div class="phone">
         <div class="topbar"><span class="back">← Till spelet</span><div class="logo">Impostor<span>.</span></div></div>
-        <div class="screen">
+        <div class="screen" style="justify-content:flex-end">
           <div style="margin:18px 0 6px">
             <div class="display d-l">Skapa konto</div>
             <p class="muted" style="font-size:14px; margin-top:6px">Spara din statistik och gå med i spel genom att visa en QR-kod.</p>
@@ -736,16 +741,40 @@
           <div class="tabs"><span>Logga in</span><span class="on">Skapa konto</span></div>
           <div class="card stack" style="gap:14px">
             <div class="field"><label>E-post</label><div class="input">sara@exempel.se</div><small>Används för att logga in. Visas bara för dig.</small></div>
-            <div class="field"><label>Namn</label><div class="input focus">Sara</div><small>2–30 tecken. Visas för andra spelare i spelet.</small></div>
-            <div class="field"><label>Lösenord</label><div class="input">••••••••</div><small>Minst 6 tecken.</small></div>
+            <div class="field"><label>Namn</label><div class="input">Sara</div><small>2–30 tecken. Visas för andra spelare i spelet.</small></div>
+            <div class="field"><label>Lösenord</label><div class="pw-field"><div class="input">••••••••</div><span class="pw-toggle">Visa</span></div><small>Minst 6 tecken.</small></div>
+            <div class="field"><label>Upprepa lösenord</label><div class="pw-field"><div class="input focus">•••••••••</div><span class="pw-toggle">Visa</span></div><small class="field-error">Lösenorden matchar inte.</small></div>
           </div>
         </div>
         <div class="footer">
-          <button class="btn btn-primary">Skapa konto</button>
+          <button class="btn btn-primary" disabled>Skapa konto</button>
           <p class="hint">Har du redan ett konto? <span class="link">Logga in</span></p>
         </div>
       </div>
-      <figcaption>11 · Skapa konto (e-post, namn, lösenord) · Logga in: e-post + lösenord</figcaption>
+      <figcaption>11 · Skapa konto (e-post, namn, lösenord två gånger; här matchar de inte, skärmen scrollad ner) · Logga in: e-post + lösenord</figcaption>
+    </figure>
+
+    <!-- 11b. Login, password shown -->
+    <figure>
+      <div class="phone">
+        <div class="topbar"><span class="back">← Till spelet</span><div class="logo">Impostor<span>.</span></div></div>
+        <div class="screen">
+          <div style="margin:18px 0 6px">
+            <div class="display d-l">Logga in</div>
+            <p class="muted" style="font-size:14px; margin-top:6px">Logga in för att se din statistik och visa din QR-kod.</p>
+          </div>
+          <div class="tabs"><span class="on">Logga in</span><span>Skapa konto</span></div>
+          <div class="card stack" style="gap:14px">
+            <div class="field"><label>E-post</label><div class="input">sara@exempel.se</div></div>
+            <div class="field"><label>Lösenord</label><div class="pw-field"><div class="input focus">hemligt1</div><span class="pw-toggle">Dölj</span></div></div>
+          </div>
+        </div>
+        <div class="footer">
+          <button class="btn btn-primary">Logga in</button>
+          <p class="hint">Inget konto än? <span class="link">Skapa konto</span></p>
+        </div>
+      </div>
+      <figcaption>11b · Logga in: "Visa" visar lösenordet, "Dölj" döljer det igen</figcaption>
     </figure>
 
     <!-- 12. Profile -->

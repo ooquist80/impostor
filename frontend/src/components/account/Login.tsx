@@ -4,7 +4,7 @@ import { useAuth } from '../../auth'
 import { Screen, Logo } from '../ui/Screen'
 import { Button, LinkButton } from '../ui/Button'
 import { Card } from '../ui/Card'
-import { Field, Input } from '../ui/Input'
+import { Field, Input, PasswordInput } from '../ui/Input'
 
 type Mode = 'login' | 'register'
 
@@ -27,14 +27,17 @@ export function Login({ onBack }: { onBack: () => void }) {
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [password, setPassword] = useState('')
+  const [repeat, setRepeat] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const mail = email.trim()
   const name = displayName.trim()
   const isRegister = mode === 'register'
+  // Don't nag while the repeat is still being typed: only once it can no longer become the same password.
+  const mismatch = repeat.length > 0 && repeat !== password && !password.startsWith(repeat)
   const valid = isRegister
-    ? looksLikeEmail(mail) && name.length >= 2 && name.length <= 30 && password.length >= 6
+    ? looksLikeEmail(mail) && name.length >= 2 && name.length <= 30 && password.length >= 6 && repeat === password
     : mail.length > 0 && password.length > 0
 
   const switchMode = (m: Mode) => {
@@ -112,9 +115,19 @@ export function Login({ onBack }: { onBack: () => void }) {
           )}
           <Field label="Lösenord" hint={isRegister ? 'Minst 6 tecken.' : undefined}>
             {(id) => (
-              <Input id={id} type="password" value={password} autoComplete={isRegister ? 'new-password' : 'current-password'} onChange={(e) => setPassword(e.target.value)} />
+              <PasswordInput id={id} value={password} autoComplete={isRegister ? 'new-password' : 'current-password'} onChange={(e) => setPassword(e.target.value)} />
             )}
           </Field>
+          {isRegister && (
+            <Field
+              label="Upprepa lösenord"
+              hint={mismatch ? <span className="field-error">Lösenorden matchar inte.</span> : 'Skriv samma lösenord igen.'}
+            >
+              {(id) => (
+                <PasswordInput id={id} value={repeat} autoComplete="new-password" onChange={(e) => setRepeat(e.target.value)} />
+              )}
+            </Field>
+          )}
         </form>
       </Card>
       {error && <p className="form-error" role="alert">{error}</p>}

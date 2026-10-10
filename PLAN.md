@@ -142,7 +142,7 @@ Games:
 
 ## Game flow (frontend)
 0. **Account pages** (on a player's own phone): a profile button in the top bar opens them. When logged in, the button shows the player's avatar (👤 otherwise), and it updates as soon as the avatar is changed on the profile.
-   - **Not logged in:** a "Logga in" / "Skapa konto" form.
+   - **Not logged in:** a "Logga in" / "Skapa konto" form. "Skapa konto" asks for the password twice ("Upprepa lösenord"); the button stays disabled until they match, and "Lösenorden matchar inte." shows once the repeat can no longer match. This is checked in the app only; the API takes one password. Every password field (login and both registration fields) has a "Visa"/"Dölj" toggle inside it (`PasswordInput` in `ui/Input.tsx`) that shows what has been typed; it keeps the focus in the field.
    - **Logged in, Profile page:**
      - The name, and the email below it (the only place the email is shown).
      - **"Ändra avatar"** opens the avatar editor in a `BottomSheet`: a live preview, "🎲 Slumpa" (new random seed, clears the picks), 9 eye styles, 5 mouths, body colour (the 5 avatar palette colours) and background (`--surface-2` or a palette colour), each shown as a small preview. "Spara" saves with `PATCH /api/me`; "Avbryt" or tapping outside discards the changes.
