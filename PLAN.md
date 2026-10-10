@@ -152,7 +152,8 @@ Games:
    - The list starts with 3 empty guest fields. "Lägg till spelare" adds a guest field. **"Skanna QR"** opens the camera modal.
    - A successful scan **fills the first empty guest field** if there is one, otherwise it adds a new row. A short toast confirms it: "Anna tillagd".
    - Scanning a registered player who is already in the list shows "Redan med". An expired or invalid token shows "QR-koden har gått ut, be spelaren visa en ny". The camera stays open, so several players can be scanned in a row.
-   - Remove buttons are hidden when only 3 entries are left. Names (guest names and usernames) are trimmed and must be non-empty and unique, case-insensitively.
+   - **Logged in on the game device:** the logged-in player is added automatically, once per login, like a scan (the app issues a join token and redeems it right away). A registered row can always be removed; at the 3-entry minimum it turns back into an empty guest field. While the logged-in player is not in the list, a **"+ Lägg till {namn}"** button adds them back.
+   - Remove buttons on guest fields are hidden when only 3 entries are left. Names (guest names and usernames) are trimmed and must be non-empty and unique, case-insensitively.
    - **Categories**: categories are fetched from `/api/categories` and shown as toggleable chips or checkboxes, so several can be selected. A "Välj alla" / "Avmarkera alla" toggle sits above them. All categories are selected by default.
    - **"Starta spelet"** (the Swedish label for "start game") is disabled until there are at least 3 valid, unique names and at least 1 category. A short hint explains what's missing.
    - **"Regler"**: a small button in the top bar, next to the profile button (not the footer's main action, which stays "Starta spelet"), opens the rules in a `BottomSheet`, rendered by `Rules.tsx`. It is plain text with short headings, scrolls if it is taller than the screen, and closes with "Stäng" or by tapping outside (see `BottomSheet`). Closing it leaves the setup (players, categories) untouched. The text is in Swedish, in the same informal "du" tone, and covers:
@@ -239,7 +240,7 @@ Screens are composed from these components. A screen does not style things on it
 **Frame → component**
 | Frame | Component |
 |---|---|
-| 1, 1b | `Setup.tsx`, `Rules.tsx` (setup with the "Regler" top-bar button; rules sheet via `BottomSheet`) |
+| 1, 1b, 1c | `Setup.tsx`, `Rules.tsx` (setup with the logged-in player added and the "Regler" top-bar button; rules sheet via `BottomSheet`; logged-in player removed, with "+ Lägg till {namn}") |
 | 2–4 | `Reveal.tsx` (pass, word, impostor) |
 | 5 | `Play.tsx` |
 | 6a, 6b, 6c | `Vote.tsx` (pass, pick with the voter left out, vote cast) |

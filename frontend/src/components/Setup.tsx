@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ApiPlayer, Category, Entry } from '../types'
-import { validateSetup } from '../game'
+import { addRegisteredEntry, validateSetup } from '../game'
 import { Screen } from './ui/Screen'
 import { Card } from './ui/Card'
 import { Button, IconButton, LinkButton } from './ui/Button'
@@ -29,12 +29,19 @@ type Props = {
   starting: boolean
   startError: string | null
   onOpenAccount: () => void
+  loggedIn: boolean
+  /** The player logged in on this device, once known (after the first add). */
+  me: ApiPlayer | null
+  /** Adds the logged-in player to the list. Resolves false if the name is already taken. */
+  onAddMe: () => Promise<boolean>
 }
 
 export function Setup(p: Props) {
   const { entries, setEntries } = p
   const [rulesOpen, setRulesOpen] = useState(false)
   const [scanning, setScanning] = useState(false)
+  const [addingMe, setAddingMe] = useState(false)
+  const [addMeError, setAddMeError] = useState<string | null>(null)
 
   const entriesRef = useRef(entries)
   useEffect(() => {
@@ -46,28 +53,37 @@ export function Setup(p: Props) {
 
   const rename = (id: number, name: string) =>
     setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, name } : e)))
-  const remove = (id: number) => setEntries((prev) => prev.filter((e) => e.id !== id))
+  // A registered row can always be removed. At the minimum it turns back into an empty guest field.
+  const remove = (id: number) =>
+    setEntries((prev) =>
+      prev.length > MIN_ENTRIES ? prev.filter((e) => e.id !== id) : prev.map((e) => (e.id === id ? newEntry() : e)),
+    )
   const add = () => setEntries((prev) => [...prev, newEntry()])
 
   /** Called by the scanner. Returns false if the player is already in the list. */
   const addRegistered = (player: ApiPlayer, participantToken: string): boolean => {
-    const current = entriesRef.current
-    const taken = current.some((e) => e.name.trim().toLowerCase() === player.username.toLowerCase())
-    if (taken) return false
-    const registered = {
-      participantToken,
-      avatar: { emoji: player.avatar_emoji, color: player.avatar_color },
-    }
-    const empty = current.find((e) => !e.registered && e.name.trim() === '')
-    const next: Entry[] = empty
-      ? current.map((e) => (e.id === empty.id ? { ...e, name: player.username, registered } : e))
-      : [...current, { ...newEntry(), name: player.username, registered }]
+    const next = addRegisteredEntry(entriesRef.current, player, participantToken, newEntry)
+    if (!next) return false
     entriesRef.current = next
     setEntries(() => next)
     return true
   }
 
   const updateAvailable = useUpdateAvailable()
+
+  const me = p.me
+  const meInList = !!me && entries.some((e) => e.registered && e.name.toLowerCase() === me.username.toLowerCase())
+  const addMe = async () => {
+    setAddingMe(true)
+    setAddMeError(null)
+    try {
+      if (!(await p.onAddMe())) setAddMeError('Du finns redan i listan')
+    } catch {
+      setAddMeError('Kunde inte lägga till dig. Försök igen.')
+    } finally {
+      setAddingMe(false)
+    }
+  }
 
   return (
     <Screen
@@ -113,7 +129,7 @@ export function Setup(p: Props) {
                   onChange={(ev) => rename(e.id, ev.target.value)}
                 />
               )}
-              {canRemove ? (
+              {canRemove || e.registered ? (
                 <IconButton aria-label={`Ta bort ${e.name || `spelare ${i + 1}`}`} onClick={() => remove(e.id)}>×</IconButton>
               ) : (
                 <span className="icon-spacer" />
@@ -124,6 +140,12 @@ export function Setup(p: Props) {
             <Button variant="secondary" small dashed aria-label="Lägg till spelare" onClick={add}>+ Lägg till</Button>
             <Button variant="scan" small onClick={() => setScanning(true)}>▣ Skanna QR</Button>
           </div>
+          {p.loggedIn && !meInList && (
+            <Button variant="secondary" small disabled={addingMe} onClick={addMe}>
+              {addingMe ? 'Lägger till…' : `+ Lägg till ${me ? me.username : 'mig'}`}
+            </Button>
+          )}
+          {addMeError && <p className="hint">{addMeError}</p>}
         </div>
       </Card>
 

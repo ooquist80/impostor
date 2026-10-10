@@ -1,4 +1,4 @@
-import type { Player, Votes } from './types'
+import type { ApiPlayer, Entry, Player, Votes } from './types'
 
 export const MIN_PLAYERS = 3
 
@@ -32,6 +32,24 @@ export function validateSetup(names: string[], categoryCount: number): SetupChec
   else if (new Set(trimmed.map((n) => n.toLowerCase())).size !== trimmed.length) error = 'duplicate'
   else if (categoryCount < 1) error = 'noCategory'
   return { valid: error === null, error, message: error ? MESSAGES[error] : '' }
+}
+
+/**
+ * Adds a registered player to the setup list: fills the first empty guest field, otherwise appends a row.
+ * Returns null if the name is already in the list (case-insensitive).
+ */
+export function addRegisteredEntry(
+  entries: Entry[],
+  player: ApiPlayer,
+  participantToken: string,
+  makeEntry: () => Entry,
+): Entry[] | null {
+  if (entries.some((e) => e.name.trim().toLowerCase() === player.username.toLowerCase())) return null
+  const registered = { participantToken, avatar: { emoji: player.avatar_emoji, color: player.avatar_color } }
+  const empty = entries.find((e) => !e.registered && e.name.trim() === '')
+  return empty
+    ? entries.map((e) => (e.id === empty.id ? { ...e, name: player.username, registered } : e))
+    : [...entries, { ...makeEntry(), name: player.username, registered }]
 }
 
 /** Votes each player got. The impostor's own vote is ignored. */

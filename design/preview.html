@@ -182,6 +182,7 @@
   .tag { font-size: 11px; font-weight: 600; color: var(--success); background: rgba(61,220,151,.12); padding: 3px 8px; border-radius: var(--radius-pill); }
   .add-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
   .add-grid .btn { min-height: 44px; font-size: 14px; padding: 0 10px; }
+  .btn-small { min-height: 44px; font-size: 14px; padding: 0 10px; }
   .btn-scan { background: rgba(255,181,71,.12); color: var(--accent); border: 1.5px solid rgba(255,181,71,.5); }
 
   .camera { position: absolute; inset: 0; background: radial-gradient(80% 50% at 30% 40%, #3B3440, #121018 70%), #121018; }
@@ -252,6 +253,7 @@
   .tally .avatar.emoji { font-size: 17px; }
   .tally .votes { margin-left: auto; font-size: 13px; color: var(--muted); }
   .tally .badge { min-width: 52px; justify-content: center; }
+  .tally .total { min-width: 28px; text-align: right; font: 800 18px var(--font-display); }
   .badge.zero { color: var(--muted); background: var(--surface-2); }
   .tally-head { width: 100%; display: flex; justify-content: space-between; padding: 0 12px; }
   .done { width: 88px; height: 88px; border-radius: 50%; display: grid; place-items: center; font-size: 40px; color: var(--accent); background: rgba(255,181,71,.12); border: 2px solid rgba(255,181,71,.5); }
@@ -320,9 +322,9 @@
           <div class="card">
             <div class="card-title">Spelare <span class="muted" style="font:500 13px var(--font-body)">4 st</span></div>
             <div class="stack">
+              <div class="input-row"><div class="reg-row" style="flex:1"><div class="avatar a3 emoji">🦊</div><span class="name">Sara</span><span class="tag" style="margin-left:auto">✓ Konto</span></div><button class="icon-btn">×</button></div>
               <div class="input-row"><div class="input">Anna</div><button class="icon-btn">×</button></div>
               <div class="input-row"><div class="input focus">Erik</div><button class="icon-btn">×</button></div>
-              <div class="input-row"><div class="reg-row" style="flex:1"><div class="avatar a3 emoji">🦊</div><span class="name">Sara</span><span class="tag" style="margin-left:auto">✓ Konto</span></div><button class="icon-btn">×</button></div>
               <div class="input-row"><div class="input placeholder">Spelare 4</div><button class="icon-btn">×</button></div>
               <div class="add-grid">
                 <button class="btn btn-secondary add" style="margin:0">+ Lägg till</button>
@@ -343,7 +345,7 @@
           <p class="hint">Fyll i namn för alla spelare</p>
         </div>
       </div>
-      <figcaption>1 · Setup: gäst + registrerad spelare</figcaption>
+      <figcaption>1 · Setup: inloggad spelare (Sara) tillagd automatiskt + gäster</figcaption>
     </figure>
 
     <!-- 1b. Setup – rules sheet -->
@@ -363,13 +365,47 @@
             <div><h4><span>2</span>Se ditt ord</h4><p>Skicka runt enheten. Titta i hemlighet, dölj och skicka vidare.</p></div>
             <div><h4><span>3</span>Diskutera</h4><p>Den som börjar säger ett ord som hör ihop med ordet, sedan går det runt. Avslöja inte ordet! När de flesta vill rösta trycker ni på <b>Avslöja bedragaren</b>.</p></div>
             <div><h4><span>4</span>Rösta</h4><p>Enheten går runt igen och alla röstar i hemlighet, bedragaren också. Du kan inte rösta på dig själv.</p></div>
-            <div><h4><span>5</span>Poäng</h4><p>Röstar du på bedragaren får du <b>1 p</b>. Bedragaren får <b>1 p för varje fel röst</b>. Era poäng visas först när ni avslutar, så ingen kan räkna ut hur du röstade.</p></div>
+            <div><h4><span>5</span>Poäng</h4><p>Röstar du på bedragaren får du <b>1 p</b>. Bedragaren får <b>1 p för varje fel röst</b>. Efter varje röstning visas allas poäng för rundan och totalt.</p></div>
             <div><h4>Fler rundor</h4><p>Kör <b>Nästa runda</b> så länge ni vill och byt kategorier mellan rundorna. Flest poäng när ni avslutar vinner.</p></div>
           </div>
           <button class="btn btn-secondary">Stäng</button>
         </div>
       </div>
       <figcaption>1b · Setup: regler</figcaption>
+    </figure>
+
+    <!-- 1c. Setup – logged-in player removed -->
+    <figure>
+      <div class="phone">
+        <div class="topbar"><div class="logo">Impostor<span>.</span></div><div class="topbar-actions"><span class="rules-btn">Regler</span><div class="profile-btn">👤</div></div></div>
+        <div class="screen">
+          <div class="card">
+            <div class="card-title">Spelare <span class="muted" style="font:500 13px var(--font-body)">3 st</span></div>
+            <div class="stack">
+              <div class="input-row"><div class="input placeholder">Spelare 1</div><span style="width:36px; flex:none"></span></div>
+              <div class="input-row"><div class="input">Anna</div><span style="width:36px; flex:none"></span></div>
+              <div class="input-row"><div class="input">Erik</div><span style="width:36px; flex:none"></span></div>
+              <div class="add-grid">
+                <button class="btn btn-secondary add" style="margin:0">+ Lägg till</button>
+                <button class="btn btn-scan">▣ Skanna QR</button>
+              </div>
+              <button class="btn btn-secondary btn-small">+ Lägg till Sara</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Kategorier <span class="link">Avmarkera alla</span></div>
+            <div class="chips">
+              <span class="chip on">Djur</span><span class="chip on">Mat</span><span class="chip on">Platser</span>
+              <span class="chip">Yrken</span><span class="chip on">Sport</span><span class="chip">Saker</span>
+            </div>
+          </div>
+        </div>
+        <div class="footer">
+          <button class="btn btn-primary" disabled>Starta spelet</button>
+          <p class="hint">Fyll i namn för alla spelare</p>
+        </div>
+      </div>
+      <figcaption>1c · Setup: inloggad spelare borttagen, kan läggas till igen</figcaption>
     </figure>
 
     <!-- 2. Reveal – pass -->
@@ -514,11 +550,11 @@
             <div class="card"><span class="eyebrow">Ledtråd</span><b>Snabel</b></div>
           </div>
           <div class="tally">
-            <div class="tally-head"><span class="eyebrow">Röster</span><span class="hint">Era poäng visas när ni avslutar</span></div>
-            <div class="player"><div class="avatar a3 emoji">🦊</div>Sara 🕵️<span class="votes">2 röster</span><span class="badge red">+1 p</span></div>
-            <div class="player"><div class="avatar a2">E</div>Erik<span class="votes">1 röst</span></div>
-            <div class="player"><div class="avatar a1">A</div>Anna<span class="votes">0 röster</span></div>
-            <div class="player"><div class="avatar a4">J</div>Johan<span class="votes">0 röster</span></div>
+            <div class="tally-head"><span class="eyebrow">Röster</span><span class="hint">Poäng · totalt</span></div>
+            <div class="player"><div class="avatar a3 emoji">🦊</div>Sara 🕵️<span class="votes">2 röster</span><span class="badge red">+1 p</span><span class="total">3</span></div>
+            <div class="player"><div class="avatar a2">E</div>Erik<span class="votes">1 röst</span><span class="badge green">+1 p</span><span class="total">2</span></div>
+            <div class="player"><div class="avatar a1">A</div>Anna<span class="votes">0 röster</span><span class="badge green">+1 p</span><span class="total">2</span></div>
+            <div class="player"><div class="avatar a4">J</div>Johan<span class="votes">0 röster</span><span class="badge zero">+0 p</span><span class="total">1</span></div>
           </div>
         </div>
         <div class="footer">
@@ -542,11 +578,11 @@
             <div class="card"><span class="eyebrow">Ledtråd</span><b>Snabel</b></div>
           </div>
           <div class="tally">
-            <div class="tally-head"><span class="eyebrow">Röster</span><span class="hint">Era poäng visas när ni avslutar</span></div>
-            <div class="player"><div class="avatar a2">E</div>Erik<span class="votes">2 röster</span></div>
-            <div class="player"><div class="avatar a4">J</div>Johan<span class="votes">1 röst</span></div>
-            <div class="player"><div class="avatar a3 emoji">🦊</div>Sara 🕵️<span class="votes">0 röster</span><span class="badge red">+3 p</span></div>
-            <div class="player"><div class="avatar a1">A</div>Anna<span class="votes">0 röster</span></div>
+            <div class="tally-head"><span class="eyebrow">Röster</span><span class="hint">Poäng · totalt</span></div>
+            <div class="player"><div class="avatar a2">E</div>Erik<span class="votes">2 röster</span><span class="badge zero">+0 p</span><span class="total">1</span></div>
+            <div class="player"><div class="avatar a4">J</div>Johan<span class="votes">1 röst</span><span class="badge zero">+0 p</span><span class="total">1</span></div>
+            <div class="player"><div class="avatar a3 emoji">🦊</div>Sara 🕵️<span class="votes">0 röster</span><span class="badge red">+3 p</span><span class="total">4</span></div>
+            <div class="player"><div class="avatar a1">A</div>Anna<span class="votes">0 röster</span><span class="badge zero">+0 p</span><span class="total">1</span></div>
           </div>
         </div>
         <div class="footer">

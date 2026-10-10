@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
-import { ApiError, getCategories, getRandomWord } from './api'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { ApiError, createJoinToken, getCategories, getRandomWord, redeemJoinToken } from './api'
 import { useAuth } from './auth'
-import { pickImpostor, pickStartingPlayer, scoreRound } from './game'
-import type { Category, Entry, Player, Round, Votes } from './types'
+import { addRegisteredEntry, pickImpostor, pickStartingPlayer, scoreRound } from './game'
+import type { ApiPlayer, Category, Entry, Player, Round, Votes } from './types'
 import { Setup, newEntry } from './components/Setup'
 import { Reveal } from './components/Reveal'
 import { Play } from './components/Play'
@@ -49,6 +49,40 @@ export function App() {
   useEffect(() => {
     fetchCategories()
   }, [fetchCategories])
+
+  // Latest list for addMe, which runs after awaits (a state updater would run too late to report the result).
+  const entriesRef = useRef(entries)
+  useEffect(() => {
+    entriesRef.current = entries
+  }, [entries])
+
+  // The player logged in on this device, tied to the token it was fetched with (so a logout or new login hides it).
+  const [me, setMe] = useState<{ token: string; player: ApiPlayer } | null>(null)
+  const myself = me && me.token === auth.token ? me.player : null
+
+  /** Adds the logged-in player like a QR scan would: issue a join token and redeem it right away. */
+  const addMe = useCallback(async (): Promise<boolean> => {
+    const token = auth.token
+    if (!token) return false
+    const { token: joinToken } = await createJoinToken()
+    const { player, participant_token } = await redeemJoinToken(joinToken)
+    setMe({ token, player })
+    const next = addRegisteredEntry(entriesRef.current, player, participant_token, newEntry)
+    if (!next) return false
+    entriesRef.current = next
+    setEntries(next)
+    return true
+  }, [auth.token])
+
+  // Add the logged-in player once per login. After that, removing them sticks until they add themselves again.
+  const autoAddedFor = useRef<string | null>(null)
+  useEffect(() => {
+    if (!auth.token || autoAddedFor.current === auth.token) return
+    autoAddedFor.current = auth.token
+    addMe().catch(() => {
+      /* offline or stale login: the "Lägg till" button stays available */
+    })
+  }, [auth.token, addMe])
 
   const loadCategories = () => {
     setCategoriesFailed(false)
@@ -135,6 +169,9 @@ export function App() {
           starting={busy}
           startError={error}
           onOpenAccount={() => setView('account')}
+          loggedIn={auth.isLoggedIn}
+          me={myself}
+          onAddMe={addMe}
         />
       )
     case 'reveal':

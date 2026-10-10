@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { gameSummary, pickImpostor, pickStartingPlayer, roundVerdict, scoreRound, tallyVotes, validateSetup } from './game'
+import { addRegisteredEntry, gameSummary, pickImpostor, pickStartingPlayer, roundVerdict, scoreRound, tallyVotes, validateSetup } from './game'
 import type { Player } from './types'
 
 const names = ['Anna', 'Erik', 'Sara', 'Johan']
@@ -105,5 +105,26 @@ describe('gameSummary', () => {
   it('a guest leader means no registered player won', () => {
     const s = gameSummary(players, { Anna: 1, Erik: 4, Sara: 2, Johan: 0 }, {}, 2)
     expect(s.players.every((p) => !p.won)).toBe(true)
+  })
+})
+
+describe('addRegisteredEntry', () => {
+  const anna = { id: 1, username: 'Anna', avatar_emoji: '🦊', avatar_color: '#000000' }
+  let id = 100
+  const make = () => ({ id: id++, name: '' })
+
+  it('fills the first empty guest field', () => {
+    const next = addRegisteredEntry([{ id: 1, name: 'Erik' }, { id: 2, name: '' }, { id: 3, name: '' }], anna, 'pt', make)
+    expect(next?.map((e) => e.name)).toEqual(['Erik', 'Anna', ''])
+    expect(next?.[1].registered).toEqual({ participantToken: 'pt', avatar: { emoji: '🦊', color: '#000000' } })
+  })
+
+  it('appends a row when no field is empty', () => {
+    const next = addRegisteredEntry([{ id: 1, name: 'Erik' }], anna, 'pt', make)
+    expect(next?.map((e) => e.name)).toEqual(['Erik', 'Anna'])
+  })
+
+  it('returns null when the name is already in the list', () => {
+    expect(addRegisteredEntry([{ id: 1, name: ' anna ' }], anna, 'pt', make)).toBeNull()
   })
 })
